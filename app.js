@@ -1,10 +1,7 @@
 var Jukebox = require('./src/jukebox');
-var EventEmitter = require('events').EventEmitter;
 var makeTerminal = require('./src/terminal')
 
-var handle = new EventEmitter();
-
-var j = new Jukebox(handle);
+var j = new Jukebox();
 j.load("./playlists").then(function() {
   console.log(j.playlists)
 });

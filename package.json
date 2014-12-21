@@ -3,7 +3,6 @@
   "version": "0.0.1",
   "dependencies": {
     "lame": "^1.1.1",
-    "lodash": "^2.4.1",
     "m3u8parse": "^0.1.16",
     "q": "^1.1.2"
   }

@@ -3,15 +3,13 @@ var fs = require('fs');
 var _m3u8parse = require('m3u8parse');
 var m3u8parse = Q.nfbind(_m3u8parse);
 var readdir = Q.nfbind(fs.readdir);
-var _ = require('lodash');
 
 var Track = require('./track');
 var Player = require('./player')
 
 module.exports = Jukebox;
 
-function Jukebox(handle) {
-  this.handle = handle;
+function Jukebox() {
   this.playlists = {};
   this.played = [];
 };
@@ -25,7 +23,7 @@ Jukebox.prototype.load = function(dirname) {
 
 Jukebox.prototype.loadPlaylists = function(dirname, files) {
   var self = this;
-  var toParse = _.map(files, function(f) {
+  var toParse = files.map(function(f) {
     return loadPlaylist([dirname,f].join('/'));
   });
 
