@@ -29,7 +29,8 @@ Jukebox.prototype.loadPlaylists = function(dirname, files) {
 
   // TODO: is .spread() safe for concurrency?
   return Q.allSettled(toParse).spread(function(results) {
-    self.playlists[results.value.filename] = makePlaylist(results.value.segments);
+    var name = nameFromFilename(results.value.filename);
+    self.playlists[name] = makePlaylist(name, results.value.segments);
   });
 }
 
@@ -45,13 +46,17 @@ function loadPlaylist(filename) {
   });
 }
 
-function makePlaylist(ts) {
+function makePlaylist(name, ts) {
   var tracks = [];
   ts.forEach(function(track) {
-    tracks.push(Track.unique({
-      uri: track.uri,
-      title: track.title
-    }));
+    tracks.push(Track.unique(track));
   });
+  tracks.name = name;
   return tracks;
+}
+
+function nameFromFilename(filename) {
+  var i = filename.lastIndexOf('/'),
+      j = filename.lastIndexOf('.');
+  return filename.slice(i+1, j);
 }

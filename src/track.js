@@ -10,6 +10,7 @@ function Track(options) {
   this.uri = options.uri;
   this.title = options.title;
   this.id = options.id;
+  this.duration = options.duration;
 }
 
 Track.unique = function(track) {
@@ -19,6 +20,7 @@ Track.unique = function(track) {
     var newTrack = new Track({
       uri: track.uri,
       title: track.title,
+      duration: track.duration,
       id: uniqueId++
     });
     registry[track.uri] = newTrack;

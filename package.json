@@ -2,6 +2,7 @@
   "name": "dj",
   "version": "0.0.1",
   "dependencies": {
+    "blessed": "0.0.37",
     "lame": "^1.1.1",
     "m3u8parse": "^0.1.16",
     "q": "^1.1.2"
