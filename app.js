@@ -1,4 +1,5 @@
 var blessed = require('blessed');
+var TrackList = require('./src/tracklist');
 
 var Jukebox = require('./src/jukebox');
 var makeTerminal = require('./src/terminal')
@@ -17,36 +18,26 @@ function playlistViewIn(playlist) {
   if (typeof playlist !== "object") {
     throw "Playlist not found"
   }
-  var entries = playlist.map(function(track) {
-    return track.title;
-  });
-  playlistShow.setLabel(" "+playlist.name+" ")
-  playlistShow.setItems(entries);
+  playlistShow.setLabel(" "+playlist.name+" ");
+  playlistShow.setItems(playlist);
   playlistShow.height = '100%';
   playlistShow.focus();
-  screen.render();
 }
 
 function playlistViewOut() {
   playlistShow.height = '50%';
   playlistIndex.focus();
-  screen.render();
 }
 
 function indexPlaylists(playlists) {
   if (typeof playlists !== 'object') {
     throw "Trying to read an invalid set of playlists"
   }
-  var entries = playlists.map(function(pl) {
-    var duration = 0;
-    pl.forEach(function(track) { duration += track.duration });
-    return pl.name + " - " + pl.length + " tracks @ " + fromSeconds(duration);
-  });
-  playlistIndex.setItems(entries);
+  playlistIndex.setItems(playlists);
 }
 
 var screen = blessed.screen();
-var masterListView = blessed.list({
+var masterListView = TrackList({
   parent:screen,
   label: ' Queue ',
   width: '50%',
@@ -56,9 +47,12 @@ var masterListView = blessed.list({
   align: 'left',
   border: {
     type: 'line'
-  }
+  },
+  displayFn: function(track) {
+    return track.title;
+  },
 });
-var playlistIndex = blessed.list({
+var playlistIndex = TrackList({
   parent: screen,
   label: ' Playlists ',
   width: '50%',
@@ -71,15 +65,22 @@ var playlistIndex = blessed.list({
     type: 'line'
   },
   selectedBg: 'green',
-  keys: true
+  keys: true,
+  displayFn: function(pl) {
+    var duration = 0;
+    pl.forEach(function(track) { duration += track.duration });
+    return pl.name + " - " + pl.length + " tracks @ " + fromSeconds(duration);
+  },
 });
 playlistIndex.on('select', function(data, index) {
-  playlistViewIn(j.playlists[index]);
+  j.currentPlaylist = j.playlists[index];
+  playlistViewIn(j.currentPlaylist);
+  screen.render();
 });
 playlistIndex.on('cancel', function(data, index) {
 
 });
-var playlistShow = blessed.list({
+var playlistShow = TrackList({
   parent: screen,
   width: '50%',
   height: '50%',
@@ -92,12 +93,18 @@ var playlistShow = blessed.list({
   },
   selectedBg: 'green',
   keys: true,
+  displayFn: function(track) {
+    return track.title;
+  },
 });
 playlistShow.on('select', function(data, index) {
-
+  j.enqueue(j.currentPlaylist[index]);
+  masterListView.addItem(j.currentPlaylist[index])
+  screen.render();
 });
 playlistShow.on('cancel', function(data, index) {
   playlistViewOut();
+  screen.render();
 });
 playlistIndex.focus();
 
