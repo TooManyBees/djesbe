@@ -10,8 +10,11 @@ var Player = require('./player')
 module.exports = Jukebox;
 
 function Jukebox() {
-  this.playlists = {};
+  this.playlists = [];
+  this.currentPlaylist = null;
+
   this.played = [];
+  this.impending = [];
 };
 
 Jukebox.prototype.load = function(dirname) {
@@ -30,7 +33,7 @@ Jukebox.prototype.loadPlaylists = function(dirname, files) {
   // TODO: is .spread() safe for concurrency?
   return Q.allSettled(toParse).spread(function(results) {
     var name = nameFromFilename(results.value.filename);
-    self.playlists[name] = makePlaylist(name, results.value.segments);
+    self.playlists.push(makePlaylist(name, results.value.segments));
   });
 }
 

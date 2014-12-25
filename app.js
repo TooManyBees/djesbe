@@ -5,53 +5,50 @@ var makeTerminal = require('./src/terminal')
 
 var j = new Jukebox();
 j.load("./playlists").then(function() {
-  // console.log(j.playlists)
-  // var terminal = makeTerminal(commandTable)
-  viewPlaylist(j.playlists["Cookie"]);
   indexPlaylists(j.playlists);
   screen.render();
 }).done();
 
-var commandTable = {
-  enqueue: function(track) { console.log("Enqueuing "+track) },
-  cancel: function(track) { console.log("Canceling "+track) },
-  play: function() { console.log("Playing") },
-  pause: function() { console.log("Pausing") }
-};
+function Controller(jukebox) {
 
-var currentPlaylist;
+}
 
-function viewPlaylist(playlist) {
+function playlistViewIn(playlist) {
   if (typeof playlist !== "object") {
     throw "Playlist not found"
   }
   var entries = playlist.map(function(track) {
-    return track.title + " ("+fromSeconds(track.duration)+")";
+    return track.title;
   });
-  playlistShow.prepend(blessed.text({
-    left: 2,
-    content: " "+playlist.name+" "
-  }));
+  playlistShow.setLabel(" "+playlist.name+" ")
   playlistShow.setItems(entries);
+  playlistShow.height = '100%';
+  playlistShow.focus();
+  screen.render();
+}
+
+function playlistViewOut() {
+  playlistShow.height = '50%';
+  playlistIndex.focus();
+  screen.render();
 }
 
 function indexPlaylists(playlists) {
   if (typeof playlists !== 'object') {
-    throw "Playlists are not valid"
+    throw "Trying to read an invalid set of playlists"
   }
-  var entries = Object.keys(playlists).map(function(name) {
-    return name + " (" + playlists[name].length + ")";
+  var entries = playlists.map(function(pl) {
+    var duration = 0;
+    pl.forEach(function(track) { duration += track.duration });
+    return pl.name + " - " + pl.length + " tracks @ " + fromSeconds(duration);
   });
-  playlistIndex.prepend(blessed.text({
-    left: 2,
-    content: " Playlists... "
-  }));
   playlistIndex.setItems(entries);
 }
 
 var screen = blessed.screen();
 var masterListView = blessed.list({
   parent:screen,
+  label: ' Queue ',
   width: '50%',
   height: '100%',
   top: 0,
@@ -63,6 +60,7 @@ var masterListView = blessed.list({
 });
 var playlistIndex = blessed.list({
   parent: screen,
+  label: ' Playlists ',
   width: '50%',
   height: '50%',
   top: 0,
@@ -74,6 +72,12 @@ var playlistIndex = blessed.list({
   },
   selectedBg: 'green',
   keys: true
+});
+playlistIndex.on('select', function(data, index) {
+  playlistViewIn(j.playlists[index]);
+});
+playlistIndex.on('cancel', function(data, index) {
+
 });
 var playlistShow = blessed.list({
   parent: screen,
@@ -89,8 +93,13 @@ var playlistShow = blessed.list({
   selectedBg: 'green',
   keys: true,
 });
+playlistShow.on('select', function(data, index) {
+
+});
+playlistShow.on('cancel', function(data, index) {
+  playlistViewOut();
+});
 playlistIndex.focus();
-// playlistShow.focus();
 
 screen.key('C-c', function(ch, key) {
   return process.exit(0);
