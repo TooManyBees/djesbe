@@ -2,17 +2,12 @@ var blessed = require('blessed');
 var TrackList = require('./src/tracklist');
 
 var Jukebox = require('./src/jukebox');
-var makeTerminal = require('./src/terminal')
 
 var j = new Jukebox();
 j.load("./playlists").then(function() {
   indexPlaylists(j.playlists);
   screen.render();
 }).done();
-
-function Controller(jukebox) {
-
-}
 
 function playlistViewIn(playlist) {
   if (typeof playlist !== "object") {
