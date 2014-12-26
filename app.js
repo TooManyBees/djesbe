@@ -62,9 +62,8 @@ var playlistIndex = TrackList({
   selectedBg: 'green',
   keys: true,
   displayFn: function(pl) {
-    var duration = 0;
-    pl.forEach(function(track) { duration += track.duration });
-    return pl.name + " - " + pl.length + " tracks @ " + fromSeconds(duration);
+    var duration = fromSeconds(durationOfTracks(pl));
+    return pl.name + " - " + pl.length + " tracks @ " + duration;
   },
 });
 playlistIndex.on('select', function(data, index) {
@@ -94,7 +93,9 @@ var playlistShow = TrackList({
 });
 playlistShow.on('select', function(data, index) {
   j.enqueue(j.currentPlaylist[index]);
-  masterListView.addItem(j.currentPlaylist[index])
+  masterListView.addItem(j.currentPlaylist[index]);
+  var duration = fromSeconds(durationOfTracks(j.pending()));
+  masterListView.setLabel(" Queue - "+duration+" remaining");
   screen.render();
 });
 playlistShow.on('cancel', function(data, index) {
@@ -109,6 +110,12 @@ screen.key('C-c', function(ch, key) {
 screen.key('space', function(ch, key) {
   j.playPause();
 });
+
+function durationOfTracks(tracks) {
+  var duration = 0;
+  tracks.forEach(function(track) {duration += track.duration});
+  return duration;
+}
 
 function fromSeconds(seconds) {
   var minutes = Math.floor(seconds / 60);

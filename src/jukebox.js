@@ -43,7 +43,11 @@ Jukebox.prototype.loadPlaylists = function(dirname, files) {
 
 Jukebox.prototype.hasPlayed = function(track) {
   var i = this.queue.indexOf(track);
-  return i > 0 && i <= this._cursor;
+  return i > -1 && i <= this._cursor;
+}
+
+Jukebox.prototype.pending = function() {
+  return this.queue.slice(this._cursor, this.queue.length);
 }
 
 Jukebox.prototype.enqueue = function(track) {
