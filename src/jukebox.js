@@ -84,7 +84,11 @@ function loadPlaylist(filename) {
 
 function makePlaylist(name, ts) {
   var tracks = [];
-  ts.forEach(function(track) {
+  ts.filter(function(track) {
+    // We can't play non-mp3 files just yet!
+    var len = track.uri.length;
+    return track.uri.slice(len-4,len) === ".mp3";
+  }).forEach(function(track) {
     tracks.push(Track.unique(track));
   });
   tracks.name = name;
