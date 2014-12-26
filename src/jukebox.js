@@ -3,9 +3,10 @@ var fs = require('fs');
 var _m3u8parse = require('m3u8parse');
 var m3u8parse = Q.nfbind(_m3u8parse);
 var readdir = Q.nfbind(fs.readdir);
+var Speaker = require('speaker')
 
 var Track = require('./track');
-var Player = require('./player')
+var playerFor = require('./player')
 
 module.exports = Jukebox;
 
@@ -13,8 +14,10 @@ function Jukebox() {
   this.playlists = [];
   this.currentPlaylist = null;
 
-  this.played = [];
-  this.impending = [];
+  this.queue = [];
+  this._cursor = 0;
+  this._playing = false;
+  this._speaker = null;
 };
 
 Jukebox.prototype.load = function(dirname) {
@@ -37,9 +40,34 @@ Jukebox.prototype.loadPlaylists = function(dirname, files) {
   });
 }
 
-Jukebox.prototype.enqueue = function(id) {
-  return null;
+Jukebox.prototype.hasPlayed = function(track) {
+  var i = this.queue.indexOf(track);
+  return i > 0 && i <= this._cursor;
+}
+
+Jukebox.prototype.enqueue = function(track) {
+  this.queue.push(track);
 };
+
+Jukebox.prototype.playPause = function() {
+  if (this._playing) {
+    this._speaker.end();
+    this._playing = false;
+  } else {
+    this.play(this.queue[this._cursor]);
+    this._playing = true;
+  }
+}
+
+Jukebox.prototype.play = function(track) {
+  var self = this;
+  var player = playerFor('mp3')
+  player.on('format', function(format) {
+    self._speaker = new Speaker(format);
+    player.pipe(self._speaker);
+  });
+  track.readable().pipe(player);
+}
 
 function loadPlaylist(filename) {
   var stream = fs.createReadStream(filename);

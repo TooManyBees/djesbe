@@ -106,6 +106,9 @@ playlistIndex.focus();
 screen.key('C-c', function(ch, key) {
   return process.exit(0);
 });
+screen.key('space', function(ch, key) {
+  j.playPause();
+});
 
 function fromSeconds(seconds) {
   var minutes = Math.floor(seconds / 60);

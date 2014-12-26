@@ -1,4 +1,6 @@
-var exports = module.exports = Track;
+var fs = require('fs')
+
+module.exports = Track;
 
 // Give each track a unique numeric id per session.
 // It's what we'll compare against for equality.
@@ -11,6 +13,10 @@ function Track(options) {
   this.title = options.title;
   this.id = options.id;
   this.duration = options.duration;
+}
+
+Track.prototype.readable = function() {
+  return fs.createReadStream(this.uri);
 }
 
 Track.unique = function(track) {
