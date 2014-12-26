@@ -3,10 +3,11 @@ var fs = require('fs');
 var _m3u8parse = require('m3u8parse');
 var m3u8parse = Q.nfbind(_m3u8parse);
 var readdir = Q.nfbind(fs.readdir);
-var Speaker = require('speaker')
+var Speaker = require('speaker');
 
 var Track = require('./track');
-var playerFor = require('./player')
+var playerFor = require('./player');
+var newlineAgnosticStream = require('./newline_agnostic_stream');
 
 module.exports = Jukebox;
 
@@ -70,7 +71,7 @@ Jukebox.prototype.play = function(track) {
 }
 
 function loadPlaylist(filename) {
-  var stream = fs.createReadStream(filename);
+  var stream = newlineAgnosticStream(filename);
   return m3u8parse(stream).then(function(res) {
     res.filename = filename;
     return res;
