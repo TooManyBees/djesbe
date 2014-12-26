@@ -13,10 +13,9 @@ module.exports = Jukebox;
 
 function Jukebox() {
   this.playlists = [];
-  this.currentPlaylist = null;
 
   this.queue = [];
-  this._cursor = 0;
+  this._cursor = 0; // NEXT track to play, not current track
   this._playing = false;
   this._speaker = null;
 };
@@ -43,7 +42,11 @@ Jukebox.prototype.loadPlaylists = function(dirname, files) {
 
 Jukebox.prototype.hasPlayed = function(track) {
   var i = this.queue.indexOf(track);
-  return i > -1 && i <= this._cursor;
+  return i > -1 && i < this._cursor;
+}
+
+Jukebox.prototype.isEnqueued = function(track) {
+  return this.queue.indexOf(track) > -1;
 }
 
 Jukebox.prototype.pending = function() {

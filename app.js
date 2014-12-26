@@ -67,8 +67,7 @@ var playlistIndex = TrackList({
   },
 });
 playlistIndex.on('select', function(data, index) {
-  j.currentPlaylist = j.playlists[index];
-  playlistViewIn(j.currentPlaylist);
+  playlistViewIn(data.content);
   screen.render();
 });
 playlistIndex.on('cancel', function(data, index) {
@@ -92,8 +91,8 @@ var playlistShow = TrackList({
   },
 });
 playlistShow.on('select', function(data, index) {
-  j.enqueue(j.currentPlaylist[index]);
-  masterListView.addItem(j.currentPlaylist[index]);
+  j.enqueue(data.content);
+  masterListView.addItem(data.content);
   var duration = fromSeconds(durationOfTracks(j.pending()));
   masterListView.setLabel(" Queue - "+duration+" remaining");
   screen.render();
