@@ -74,6 +74,17 @@ Jukebox.prototype.unqueue = function(index) {
   return this.queue.splice(index, 1)[0] || null;
 }
 
+Jukebox.prototype._stopAnd = function(cb) {
+  var self = this;
+  cb = cb || function(){ self._speaker = null; };
+  if (this._speaker) {
+    this._speaker.removeListener('close', this._autoAdvance);
+    this._speaker.end(cb);
+  } else {
+    cb();
+  }
+}
+
 Jukebox.prototype.playPause = function() {
   if (this._playing) {
     this.stop();
@@ -86,11 +97,10 @@ Jukebox.prototype.stop = function() {
   var self = this;
   if (this._playing) {
     this._playing = false;
-    this._speaker.removeListener('close', self._autoAdvance);
-    this._speaker.end(function() {
+    this._stopAnd(function() {
       self._speaker = null;
+      self.emit('stop', this._cursor);
     });
-    this.emit('stop', this._cursor);
   }
 }
 
@@ -107,12 +117,7 @@ Jukebox.prototype.play = function(track) {
     });
     track.readable().pipe(player);
   }
-  if (self._speaker) {
-    self._speaker.removeListener('close', self._autoAdvance);
-    self._speaker.end(playTrack);
-  } else {
-    playTrack();
-  }
+  this._stopAnd(playTrack);
 }
 
 Jukebox.prototype.advance = function(dir) {
