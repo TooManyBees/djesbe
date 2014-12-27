@@ -95,11 +95,11 @@ TrackBox.prototype.parseContent = function(noTags) {
   if (this.detached) return false;
 
   var width = this.width - this.iwidth;
+  var displayContent = this.displayFn(this.content);
   if (this._clines == null
       || this._clines.width !== width
-      || this._clines.content !== this.content) {
-    var mappedContent = this.displayFn(this.content),
-        content = mappedContent
+      || this._clines.content !== displayContent) {
+    var content = displayContent
           .replace(/[\x00-\x08\x0b-\x0c\x0e-\x1a\x1c-\x1f\x7f]/g, '')
           .replace(/\x1b(?!\[[\d;]*m)/g, '')
           .replace(/\r\n|\r/g, '\n')
@@ -112,7 +112,7 @@ TrackBox.prototype.parseContent = function(noTags) {
 
     this._clines = this._wrapContent(content, width);
     this._clines.width = width;
-    this._clines.content = mappedContent;
+    this._clines.content = content;
     this._clines.attr = this._parseAttr(this._clines);
     this._clines.ci = [];
     this._clines.reduce(function(total, line) {

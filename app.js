@@ -108,7 +108,10 @@ var playlistShow = TrackList({
   },
   keys: true,
   displayFn: function(track) {
-    return track.title;
+    var title = j.isEnqueued(track)
+      ? '{light-black-fg}'+track.title+'{/}'
+      : track.title;
+    return title;
   },
 });
 playlistShow.on('select', function(data, index) {
