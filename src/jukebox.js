@@ -61,6 +61,14 @@ Jukebox.prototype.enqueue = function(track) {
   this.queue.push(track);
 };
 
+Jukebox.prototype.unqueue = function(index) {
+  // Assume that a track can/will be enqueued multiple times.
+  // We can't just indexOf to find it, we have to use the index.
+  // Also this expression should just fizzle with undefined if
+  // the index is beyond queue.length.
+  return this.queue.splice(index, 1)[0] || null;
+}
+
 Jukebox.prototype.playPause = function() {
   if (this._playing) {
     this.stop();

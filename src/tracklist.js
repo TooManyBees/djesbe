@@ -52,7 +52,7 @@ TrackList.prototype.appendItem = function(item) {
     };
   });
 
-  var item = new TrackBox(options);
+  var item = new TrackBox(options, this.items.length);
 
   this.items.push(item);
   this.append(item);
@@ -74,8 +74,9 @@ TrackList.prototype.appendItem = function(item) {
   }
 }
 
-function TrackBox(options) {
+function TrackBox(options, playlistIndex) {
   this.displayFn = options.displayFn || function(id){return id};
+  this.playlistIndex = playlistIndex;
   blessed.box.call(this, options);
 }
 
@@ -95,7 +96,7 @@ TrackBox.prototype.parseContent = function(noTags) {
   if (this.detached) return false;
 
   var width = this.width - this.iwidth;
-  var displayContent = this.displayFn(this.content);
+  var displayContent = this.displayFn(this.content, this.playlistIndex);
   if (this._clines == null
       || this._clines.width !== width
       || this._clines.content !== displayContent) {
@@ -104,7 +105,7 @@ TrackBox.prototype.parseContent = function(noTags) {
           .replace(/\x1b(?!\[[\d;]*m)/g, '')
           .replace(/\r\n|\r/g, '\n')
           .replace(/\t/g, this.screen.tabc)
-          .replace(wideChars, '?');;
+          .replace(wideChars, '?');
 
     if (!noTags) {
       content = this._parseTags(content);

@@ -11,6 +11,7 @@ j.load("./playlists").then(function() {
 
 j.on('advance', function(index, track) {
   masterListView.select(index);
+  masterListView.setLabel(queueTitle());
   screen.render();
 });
 
@@ -42,7 +43,7 @@ function indexPlaylists(playlists) {
 
 var listStyle = {
   selected: {
-    fg: 'white',
+    fg: 'light white',
     bg: 'green',
   },
   item: {
@@ -64,9 +65,26 @@ var masterListView = TrackList({
   },
   parseTags: true,
   keys: true,
-  displayFn: function(track) {
-    return track.title;
+  displayFn: function(track, index) {
+    var bg = (j._cursor === index) ? '{bold}' : '';
+    var fg = (j._cursor > index) ? '{light-black-fg}' : '';
+    return (fg || bg) ? fg+bg+track.title+'{/}' : track.title;
   },
+});
+masterListView.on('focus', function() {
+  masterListView.style.selected.bg = 'green';
+  masterListView.style.selected.fg = 'light white';
+});
+masterListView.on('blur', function() {
+  masterListView.style.selected.bg = undefined;
+  masterListView.style.selected.fg = undefined;
+});
+masterListView.on('select', function(data, index) {
+
+});
+masterListView.key('delete, backspace', function() {
+  j.unqueue(masterListView.selected);
+  screen.render();
 });
 var playlistIndex = TrackList({
   parent: screen,
@@ -117,8 +135,7 @@ var playlistShow = TrackList({
 playlistShow.on('select', function(data, index) {
   j.enqueue(data.content);
   masterListView.addItem(data.content);
-  var duration = fromSeconds(durationOfTracks(j.pending()));
-  masterListView.setLabel(" Queue - "+duration+" remaining");
+  masterListView.setLabel(queueTitle());
   screen.render();
 });
 playlistShow.on('cancel', function(data, index) {
@@ -132,6 +149,17 @@ screen.key('C-c', function(ch, key) {
 });
 screen.key('space', function(ch, key) {
   j.playPause();
+});
+screen.key('tab', function(ch, key) {
+  if (!masterListView.focused) {
+    screen.saveFocus();
+    masterListView.focus();
+    screen.render();
+  }
+});
+screen.key('S-tab', function(ch, key) {
+  screen.rewindFocus();
+  screen.render();
 });
 screen.key('S-right', function(ch, key) {
   j.advance(1);
@@ -161,4 +189,9 @@ function fromSeconds(seconds) {
   } else {
     return [minutes, seconds].join(":");
   }
+}
+
+function queueTitle() {
+  var duration = fromSeconds(durationOfTracks(j.pending()));
+  return " Queue - "+duration+" remaining";
 }
