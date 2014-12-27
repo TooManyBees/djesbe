@@ -9,6 +9,15 @@ j.load("./playlists").then(function() {
   screen.render();
 }).done();
 
+j.on('advance', function(index, track) {
+  masterListView.select(index);
+  screen.render();
+});
+
+j.on('stop', function(index, track) {
+  screen.render();
+});
+
 function playlistViewIn(playlist) {
   if (typeof playlist !== "object") {
     throw "Playlist not found"
@@ -120,6 +129,12 @@ screen.key('C-c', function(ch, key) {
 });
 screen.key('space', function(ch, key) {
   j.playPause();
+});
+screen.key('S-right', function(ch, key) {
+  j.advance(1);
+});
+screen.key('S-left', function(ch, key) {
+  j.advance(-1);
 });
 
 function durationOfTracks(tracks) {

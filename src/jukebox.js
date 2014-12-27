@@ -1,9 +1,10 @@
 var Q = require('q');
 var fs = require('fs');
-var _m3u8parse = require('m3u8parse');
-var m3u8parse = Q.nfbind(_m3u8parse);
+var m3u8parse = Q.nfbind(require('m3u8parse'));
 var readdir = Q.nfbind(fs.readdir);
 var Speaker = require('speaker');
+var util = require('util');
+var EventEmitter = require('events').EventEmitter;
 
 var Track = require('./track');
 var playerFor = require('./player');
@@ -11,7 +12,9 @@ var newlineAgnosticStream = require('./newline_agnostic_stream');
 
 module.exports = Jukebox;
 
+util.inherits(Jukebox, EventEmitter);
 function Jukebox() {
+  EventEmitter.call(this);
   this.playlists = [];
 
   this.queue = [];
@@ -60,11 +63,18 @@ Jukebox.prototype.enqueue = function(track) {
 
 Jukebox.prototype.playPause = function() {
   if (this._playing) {
-    this._speaker.end();
-    this._playing = false;
-  } else {
+    this.stop();
+  } else if (this.queue[this._cursor] !== undefined) {
     this.play(this.queue[this._cursor]);
-    this._playing = true;
+  }
+}
+
+Jukebox.prototype.stop = function() {
+  if (this._playing) {
+    this._playing = false;
+    this._speaker.removeAllListeners('close');
+    this._speaker.end();
+    this.emit('stop', this._cursor);
   }
 }
 
@@ -72,10 +82,28 @@ Jukebox.prototype.play = function(track) {
   var self = this;
   var player = playerFor('mp3')
   player.on('format', function(format) {
+    self._playing = true;
     self._speaker = new Speaker(format);
+    self.emit('advance', self._cursor);
+    self._speaker.on('close', function() {
+      self.advance(1);
+    });
     player.pipe(self._speaker);
   });
   track.readable().pipe(player);
+}
+
+Jukebox.prototype.advance = function(dir) {
+  if (this._playing) {
+    this._speaker.removeAllListeners('close');
+    this._speaker.end();
+  }
+  this._cursor += dir;
+  var next = this.queue[this._cursor];
+  if (next !== undefined) {
+    this.play(next);
+    this.emit("advance", this._cursor, next);
+  }
 }
 
 function loadPlaylist(filename) {
