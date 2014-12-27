@@ -21,6 +21,11 @@ function Jukebox() {
   this._cursor = 0; // NEXT track to play, not current track
   this._playing = false;
   this._speaker = null;
+
+  this._autoAdvance = function() {
+    this._speaker = null;
+    this.advance(1);
+  }.bind(this);
 };
 
 Jukebox.prototype.load = function(dirname) {
@@ -78,39 +83,43 @@ Jukebox.prototype.playPause = function() {
 }
 
 Jukebox.prototype.stop = function() {
+  var self = this;
   if (this._playing) {
     this._playing = false;
-    this._speaker.removeAllListeners('close');
-    this._speaker.end();
+    this._speaker.removeListener('close', self._autoAdvance);
+    this._speaker.end(function() {
+      self._speaker = null;
+    });
     this.emit('stop', this._cursor);
   }
 }
 
 Jukebox.prototype.play = function(track) {
   var self = this;
-  var player = playerFor('mp3')
-  player.on('format', function(format) {
-    self._playing = true;
-    self._speaker = new Speaker(format);
-    self.emit('advance', self._cursor);
-    self._speaker.on('close', function() {
-      self.advance(1);
+  var playTrack = function() {
+    var player = playerFor('mp3')
+    player.on('format', function(format) {
+      self._playing = true;
+      self._speaker = new Speaker(format);
+      self._speaker.on('close', self._autoAdvance);
+      self.emit('advance', self._cursor);
+      player.pipe(self._speaker);
     });
-    player.pipe(self._speaker);
-  });
-  track.readable().pipe(player);
+    track.readable().pipe(player);
+  }
+  if (self._speaker) {
+    self._speaker.removeListener('close', self._autoAdvance);
+    self._speaker.end(playTrack);
+  } else {
+    playTrack();
+  }
 }
 
 Jukebox.prototype.advance = function(dir) {
-  if (this._playing) {
-    this._speaker.removeAllListeners('close');
-    this._speaker.end();
-  }
   this._cursor += dir;
   var next = this.queue[this._cursor];
-  if (next !== undefined) {
+  if (next !== undefined && this._playing) {
     this.play(next);
-    this.emit("advance", this._cursor, next);
   }
 }
 
