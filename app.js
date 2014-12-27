@@ -31,6 +31,16 @@ function indexPlaylists(playlists) {
   playlistIndex.setItems(playlists);
 }
 
+var listStyle = {
+  selected: {
+    fg: 'white',
+    bg: 'green',
+  },
+  item: {
+    fg: 'blue',
+  },
+}
+
 var screen = blessed.screen();
 var masterListView = TrackList({
   parent:screen,
@@ -43,6 +53,8 @@ var masterListView = TrackList({
   border: {
     type: 'line'
   },
+  parseTags: true,
+  keys: true,
   displayFn: function(track) {
     return track.title;
   },
@@ -55,11 +67,11 @@ var playlistIndex = TrackList({
   top: 0,
   left: 0,
   align: 'left',
-  fg: 'blue',
+  style: listStyle,
+  parseTags: true,
   border: {
     type: 'line'
   },
-  selectedBg: 'green',
   keys: true,
   displayFn: function(pl) {
     var duration = fromSeconds(durationOfTracks(pl));
@@ -80,11 +92,11 @@ var playlistShow = TrackList({
   bottom: 0,
   left: 0,
   align: 'left',
-  fg: 'blue',
+  style: listStyle,
+  parseTags: true,
   border: {
     type: 'line'
   },
-  selectedBg: 'green',
   keys: true,
   displayFn: function(track) {
     return track.title;
