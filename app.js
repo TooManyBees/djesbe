@@ -66,7 +66,10 @@ masterListView.on('select', function(data, index) {
 
 });
 masterListView.key('delete, backspace', function() {
-  j.unqueue(masterListView.selected);
+  var newQueue = j.unqueue(masterListView.selected)
+  if (newQueue) {
+    masterListView.setItems(newQueue);
+  }
   screen.render();
 });
 var playlistIndex = TrackList({
@@ -96,9 +99,6 @@ selectionStyle(playlistIndex, {bg: 'green', fg: 'light white'});
 playlistIndex.on('select', function(data, index) {
   playlistViewIn(data.content);
   screen.render();
-});
-playlistIndex.on('cancel', function(data, index) {
-
 });
 var playlistShow = TrackList({
   parent: screen,

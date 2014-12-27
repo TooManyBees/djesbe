@@ -71,7 +71,12 @@ Jukebox.prototype.unqueue = function(index) {
   // We can't just indexOf to find it, we have to use the index.
   // Also this expression should just fizzle with undefined if
   // the index is beyond queue.length.
-  return this.queue.splice(index, 1)[0] || null;
+  if (index <= this._cursor) {
+    this._cursor--;
+  }
+  if (this.queue.splice(index, 1)[0]) {
+    return this.queue;
+  }
 }
 
 Jukebox.prototype._stopAnd = function(cb) {
