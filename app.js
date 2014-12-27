@@ -41,16 +41,6 @@ function indexPlaylists(playlists) {
   playlistIndex.setItems(playlists);
 }
 
-var listStyle = {
-  selected: {
-    fg: 'light white',
-    bg: 'green',
-  },
-  item: {
-    fg: 'blue',
-  },
-}
-
 var screen = blessed.screen();
 var masterListView = TrackList({
   parent:screen,
@@ -71,14 +61,7 @@ var masterListView = TrackList({
     return (fg || bg) ? fg+bg+track.title+'{/}' : track.title;
   },
 });
-masterListView.on('focus', function() {
-  masterListView.style.selected.bg = 'green';
-  masterListView.style.selected.fg = 'light white';
-});
-masterListView.on('blur', function() {
-  masterListView.style.selected.bg = undefined;
-  masterListView.style.selected.fg = undefined;
-});
+selectionStyle(masterListView, {bg: 'green', fg: 'light white'});
 masterListView.on('select', function(data, index) {
 
 });
@@ -94,7 +77,11 @@ var playlistIndex = TrackList({
   top: 0,
   left: 0,
   align: 'left',
-  style: listStyle,
+  style: {
+    item: {
+      fg: 'blue',
+    },
+  },
   parseTags: true,
   border: {
     type: 'line'
@@ -105,6 +92,7 @@ var playlistIndex = TrackList({
     return pl.name + " - " + pl.length + " tracks @ " + duration;
   },
 });
+selectionStyle(playlistIndex, {bg: 'green', fg: 'light white'});
 playlistIndex.on('select', function(data, index) {
   playlistViewIn(data.content);
   screen.render();
@@ -119,7 +107,11 @@ var playlistShow = TrackList({
   bottom: 0,
   left: 0,
   align: 'left',
-  style: listStyle,
+  style: {
+    item: {
+      fg: 'blue',
+    },
+  },
   parseTags: true,
   border: {
     type: 'line'
@@ -132,6 +124,7 @@ var playlistShow = TrackList({
     return title;
   },
 });
+selectionStyle(playlistShow, {bg: 'green', fg: 'light white'});
 playlistShow.on('select', function(data, index) {
   j.enqueue(data.content);
   masterListView.addItem(data.content);
@@ -158,8 +151,10 @@ screen.key('tab', function(ch, key) {
   }
 });
 screen.key('S-tab', function(ch, key) {
-  screen.rewindFocus();
-  screen.render();
+  if (masterListView.focused) {
+    screen.rewindFocus();
+    screen.render();
+  }
 });
 screen.key('S-right', function(ch, key) {
   j.advance(1);
@@ -194,4 +189,15 @@ function fromSeconds(seconds) {
 function queueTitle() {
   var duration = fromSeconds(durationOfTracks(j.pending()));
   return " Queue - "+duration+" remaining";
+}
+
+function selectionStyle(list, opts) {
+  list.on('focus', function() {
+    list.style.selected.bg = opts.bg;
+    list.style.selected.fg = opts.fg;
+  });
+  list.on('blur', function() {
+    list.style.selected.bg = undefined;
+    list.style.selected.fg = undefined;
+  });
 }
