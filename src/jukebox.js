@@ -33,10 +33,11 @@ Jukebox.prototype.loadPlaylists = function(dirname, files) {
     return loadPlaylist([dirname,f].join('/'));
   });
 
-  // TODO: is .spread() safe for concurrency?
-  return Q.allSettled(toParse).spread(function(results) {
-    var name = nameFromFilename(results.value.filename);
-    self.playlists.push(makePlaylist(name, results.value.segments));
+  return Q.allSettled(toParse).then(function(results) {
+    results.forEach(function(result) {
+      var name = nameFromFilename(result.value.filename);
+      self.playlists.push(makePlaylist(name, result.value.segments));
+    });
   });
 }
 
