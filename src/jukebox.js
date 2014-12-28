@@ -130,6 +130,8 @@ Jukebox.prototype.advance = function(dir) {
   var next = this.queue[this._cursor];
   if (next !== undefined && this._playing) {
     this.play(next);
+  } else {
+    this.emit('advance');
   }
 }
 
