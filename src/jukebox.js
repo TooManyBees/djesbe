@@ -69,14 +69,12 @@ Jukebox.prototype.enqueue = function(track) {
 Jukebox.prototype.unqueue = function(index) {
   // Assume that a track can/will be enqueued multiple times.
   // We can't just indexOf to find it, we have to use the index.
-  // Also this expression should just fizzle with undefined if
-  // the index is beyond queue.length.
-  if (index <= this._cursor) {
-    this._cursor--;
-  }
-  if (this.queue.splice(index, 1)[0]) {
-    return this.queue;
-  }
+  if (index === this._cursor && this._playing) this.advance(1);
+  if (index <= this._cursor && this._cursor > 0) this._cursor--;
+  // Attempt a splice, but only return the changed queue if
+  // something got spliced out. (i.e. index out of bounds
+  // harmlessly fizzles)
+  if (this.queue.splice(index, 1)[0]) return this.queue;
 }
 
 Jukebox.prototype._stopAnd = function(cb) {
@@ -93,8 +91,8 @@ Jukebox.prototype._stopAnd = function(cb) {
 Jukebox.prototype.playPause = function() {
   if (this._playing) {
     this.stop();
-  } else if (this.queue[this._cursor] !== undefined) {
-    this.play(this.queue[this._cursor]);
+  } else if (this.currentTrack()) {
+    this.play(this.currentTrack());
   }
 }
 
@@ -127,12 +125,16 @@ Jukebox.prototype.play = function(track) {
 
 Jukebox.prototype.advance = function(dir) {
   this._cursor += dir;
-  var next = this.queue[this._cursor];
+  var next = this.currentTrack();
   if (next !== undefined && this._playing) {
     this.play(next);
   } else {
     this.emit('advance');
   }
+}
+
+Jukebox.prototype.currentTrack = function() {
+  return this.queue[this._cursor] || null;
 }
 
 function loadPlaylist(filename) {

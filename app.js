@@ -63,7 +63,8 @@ var masterListView = TrackList({
 });
 selectionStyle(masterListView, {bg: 'green', fg: 'light white'});
 masterListView.on('select', function(data, index) {
-
+  j._cursor = index;
+  j.play(data.content);
 });
 masterListView.key('delete, backspace', function() {
   var newQueue = j.unqueue(masterListView.selected)
