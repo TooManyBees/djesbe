@@ -10,6 +10,11 @@ var Track = require('./track');
 var playerFor = require('./player');
 var newlineAgnosticStream = require('./newline_agnostic_stream');
 
+const ALLOWED_EXTENSIONS = {
+  mp3: true,
+  ogg: true,
+};
+
 module.exports = Jukebox;
 
 util.inherits(Jukebox, EventEmitter);
@@ -110,13 +115,16 @@ Jukebox.prototype.stop = function() {
 Jukebox.prototype.play = function(track) {
   var self = this;
   var playTrack = function() {
-    var player = playerFor('mp3')
-    player.on('format', function(format) {
+    // the callback takes 2 arguments because ogg is a wrapped
+    // format. We're piping into the inner decoder (pl) in the
+    // callback, but piping the read stream into the outer decoder
+    // (player)
+    var player = playerFor(track.extension, function(format, pl) {
       self._playing = true;
       self._speaker = new Speaker(format);
       self._speaker.on('close', self._autoAdvance);
       self.emit('advance', self._cursor);
-      player.pipe(self._speaker);
+      pl.pipe(self._speaker);
     });
     track.readable().pipe(player);
   }
@@ -147,10 +155,12 @@ function loadPlaylist(filename) {
 
 function makePlaylist(name, ts) {
   var tracks = [];
-  ts.filter(function(track) {
-    // We can't play non-mp3 files just yet!
-    var len = track.uri.length;
-    return track.uri.slice(len-4,len) === ".mp3";
+  ts.map(function(track){
+    var extMarker = track.uri.lastIndexOf('.');
+    track.extension = extMarker ? track.uri.slice(extMarker+1) : null;
+    return track;
+  }).filter(function(track) {
+    return ALLOWED_EXTENSIONS.hasOwnProperty(track.extension);
   }).forEach(function(track) {
     tracks.push(Track.unique(track));
   });

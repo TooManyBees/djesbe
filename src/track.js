@@ -10,6 +10,7 @@ var registry = {};
 
 function Track(options) {
   this.uri = options.uri;
+  this.extension = options.extension;
   this.title = options.title;
   this.id = options.id;
   this.duration = options.duration;
@@ -27,6 +28,7 @@ Track.unique = function(track) {
       uri: track.uri,
       title: track.title,
       duration: track.duration,
+      extension: track.extension,
       id: uniqueId++
     });
     registry[track.uri] = newTrack;
