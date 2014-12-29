@@ -132,9 +132,10 @@ Jukebox.prototype.play = function(track) {
 }
 
 Jukebox.prototype.advance = function(dir) {
+  if (!(this.queue[this._cursor + dir] instanceof Track)) return;
   this._cursor += dir;
   var next = this.currentTrack();
-  if (next !== undefined && this._playing) {
+  if (this._playing) {
     this.play(next);
   } else {
     this.emit('advance');
