@@ -29,6 +29,10 @@ function View(jukebox) {
     self.updateQueueLabel();
   });
 
+  this.jukebox.on('heartbeat', function() {
+    self.updateQueueLabel();
+  });
+
   this.setHandlers();
   this.setKeys();
   this.screen.render();

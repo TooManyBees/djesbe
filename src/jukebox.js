@@ -26,9 +26,16 @@ function Jukebox() {
   this._playing = false;
 
   this._autoAdvance = function() {
+    clearInterval(this._heartbeat);
     this._advance(1, true);
   }.bind(this);
 };
+
+Jukebox.prototype._beginHeartbeat = function() {
+  this._heartbeat = setInterval(function(self) {
+    self.emit('heartbeat');
+  }, 1000, this);
+}
 
 Jukebox.prototype.load = function(dirname) {
   var self = this;
@@ -105,6 +112,7 @@ Jukebox.prototype._play = function(track, index) {
   if (typeof index === 'number') this._cursor = index;
   track.once('end', this._autoAdvance);
   return track.play().then(function() {
+    self._beginHeartbeat();
     self.emit('advance', self._cursor);
   });
 }
