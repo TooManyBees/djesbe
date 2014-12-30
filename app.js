@@ -158,10 +158,10 @@ screen.key('S-tab', function(ch, key) {
   }
 });
 screen.key('S-right', function(ch, key) {
-  j.advance(1).then(function(){screen.render()});
+  j.advance(1);
 });
 screen.key('S-left', function(ch, key) {
-  j.advance(-1).then(function(){screen.render()});
+  j.advance(-1);
 });
 
 function durationOfTracks(tracks) {

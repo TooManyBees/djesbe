@@ -26,7 +26,7 @@ function Jukebox() {
   this._playing = false;
 
   this._autoAdvance = function() {
-    this._advance(1);
+    this._advance(1, true);
   }.bind(this);
 };
 
@@ -96,8 +96,11 @@ Jukebox.prototype.unqueue = function(index) {
 // Play a track, and (optionally) set cursor to index
 Jukebox.prototype._play = function(track, index) {
   if (typeof index === 'number') self._cursor = index;
+  var self = this;
   track.once('end', this._autoAdvance);
-  return track.play();
+  return track.play().then(function() {
+    self.emit('advance', self._cursor);
+  });
 }
 
 // Play a track, after interrupting the current track
@@ -114,7 +117,7 @@ Jukebox.prototype.playPause = function() {
   if (this.currentTrack().isPlaying()) {
     return this.stop(this.currentTrack());
   } else {
-    return this.currentTrack().play();
+    return this._play(this.currentTrack());
   }
 }
 
@@ -125,17 +128,21 @@ Jukebox.prototype.advance = function(dir) {
   var autoAdvance = currentTrack.isPlaying();
   return this.stop(currentTrack)
     .then(function() {
-      if (autoAdvance) return self._advance(dir);
-      else return true;
+      return self._advance(dir, autoAdvance);
     });
 }
 
 // Plays the next track. Assumes we've already cleaned up
 // previous track and checked for autoplay status, etc.
-Jukebox.prototype._advance = function(dir) {
+Jukebox.prototype._advance = function(dir, autoAdvance) {
   var nextTrack = this.nextTrack(dir);
-  if (nextTrack) return this._play(nextTrack);
-  else return Q();
+  if (!nextTrack) return Q();
+  if (autoAdvance) {
+    return this._play(nextTrack)
+  } else {
+    this.emit('advance', this._cursor);
+    return Q();
+  }
 }
 
 Jukebox.prototype.stop = function(track) {
