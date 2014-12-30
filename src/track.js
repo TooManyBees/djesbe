@@ -4,6 +4,7 @@ var util = require('util');
 var EventEmitter = require('events').EventEmitter;
 var playerFor = require('./player');
 var Q = require('q');
+var qstat = Q.nfbind(fs.stat);
 
 module.exports = Track;
 
@@ -24,6 +25,7 @@ function Track(options) {
   this.duration = options.duration;
 
   this._speaker = null;
+  this.size = null;
   this._stop = function() {
     this._speaker = null;
     this.emit('end');
@@ -32,15 +34,17 @@ function Track(options) {
 
 Track.prototype.play = function() {
   var self = this;
-  return Q.Promise(function(resolve, reject) {
-    var player = playerFor(self.extension, function(format, pl) {
-      // on success (format) callback
-      self._speaker = new Speaker(format);
-      self._speaker.on('close', self._stop);
-      pl.pipe(self._speaker);
-      resolve();
+  return this.readSize().then(function() {
+    return Q.Promise(function(resolve, reject) {
+      var player = playerFor(self.extension, function(format, pl) {
+        // on success (format) callback
+        self._speaker = new Speaker(format);
+        self._speaker.once('close', self._stop);
+        pl.pipe(self._speaker);
+        resolve();
+      });
+      self.readable().pipe(player);
     });
-    self.readable().pipe(player);
   });
 }
 
@@ -61,6 +65,17 @@ Track.prototype.isPlaying = function() {
 
 Track.prototype.readable = function() {
   return fs.createReadStream(this.uri);
+}
+
+Track.prototype.readSize = function() {
+  var self = this;
+  if (typeof this.size === 'number') {
+    return Q();
+  } else {
+    return qstat(self.uri).then(function(stat) {
+      self.size = stat.size;
+    });
+  }
 }
 
 Track.unique = function(track) {
