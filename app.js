@@ -1,10 +1,11 @@
 var blessed = require('blessed');
 var TrackList = require('./src/tracklist');
-
 var Jukebox = require('./src/jukebox');
 
+var playlistDir = process.argv[2] || "./playlists";
+
 var j = new Jukebox();
-j.load("./playlists").then(function() {
+j.load(playlistDir).then(function() {
   indexPlaylists(j.playlists);
   screen.render();
 }).done();

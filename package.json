@@ -14,6 +14,11 @@
     "type": "git",
     "url": "https://github.com/TooManyBees/djesbe"
   },
+  "files": ["djesbe.js", "app.js", "src"],
+  "main": "djesbe.js",
+  "bin": {
+    "dj": "./app.js"
+  },
   "dependencies": {
     "blessed": "0.0.37",
     "lame": "^1.1.1",
