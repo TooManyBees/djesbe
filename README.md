@@ -11,7 +11,7 @@ Terminal based audio player for Node.js. Written to solve my very specific probl
 The top left pane is a list of `m3u8` files that the app found and parsed. The lower left pane is a list of tracks in the selected playlist. The right pane is the actual queue of tracks to play. As tracks get enqueued, they are grayed out from the track pane (though they are still playable).
 
 From anywhere
-* `tab` focuses the queue (which starts empty) and `shift-tab` unfocuses it
+* `tab` toggles focus between the queue and the selection panes
 * `space` starts and stops the current track in the queue
 * `shift-right` and `shift-left` skip forward and backward in the queue
 
@@ -40,8 +40,7 @@ A `Jukebox` loads the playlists, maintains the queue of tracks to play, and keep
 
 # To do
 
-1. The view needs its own controller rather than sticking all the logic in app.js
-2. The queue needs its own model for the same reasons
+1. The queue needs its own model to move logic out of Jukebox
 3. Ability to enqueue an entire playlist's tracks
 4. Ability to mark playlists as "shufflable" and have the app automatically pull from those playlists when the queue runs out.
 5. Remember progress of current track, so after pausing we can resume from where we left off
