@@ -6,7 +6,6 @@ var util = require('util');
 var EventEmitter = require('events').EventEmitter;
 
 var Track = require('./track');
-var playerFor = require('./player');
 var newlineAgnosticStream = require('./newline_agnostic_stream');
 
 const ALLOWED_EXTENSIONS = {
