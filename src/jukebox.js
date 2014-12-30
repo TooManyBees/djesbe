@@ -1,5 +1,6 @@
 var Q = require('q');
 var fs = require('fs');
+var path = require('path');
 var m3u8parse = Q.nfbind(require('m3u8parse'));
 var readdir = Q.nfbind(fs.readdir);
 var util = require('util');
@@ -31,15 +32,21 @@ function Jukebox() {
 
 Jukebox.prototype.load = function(dirname) {
   var self = this;
-  return readdir(dirname).then(function(files) {
-    return self.loadPlaylists(dirname, files)
-  });
+  return readdir(dirname)
+    .catch(function(err) {
+      throw "Can't read directory named '"+dirname+"'";
+    }).then(function(files) {
+      var m3u8s = files.filter(function(f) {
+        return path.extname(f) === ".m3u8";
+      });
+      return self.loadPlaylists(dirname, m3u8s);
+    });
 }
 
 Jukebox.prototype.loadPlaylists = function(dirname, files) {
   var self = this;
   var toParse = files.map(function(f) {
-    return loadPlaylist([dirname,f].join('/'));
+    return loadPlaylist([dirname,f].join(path.sep));
   });
 
   return Q.allSettled(toParse).then(function(results) {
@@ -177,8 +184,7 @@ function loadPlaylist(filename) {
 function makePlaylist(name, ts) {
   var tracks = [];
   ts.map(function(track){
-    var extMarker = track.uri.lastIndexOf('.');
-    track.extension = extMarker ? track.uri.slice(extMarker+1) : null;
+    track.extension = path.extname(track.uri).slice(1);
     return track;
   }).filter(function(track) {
     return ALLOWED_EXTENSIONS.hasOwnProperty(track.extension);

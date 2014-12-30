@@ -1,2 +1,3 @@
 node_modules
-playlists
+*.m3u
+*.m3u8
