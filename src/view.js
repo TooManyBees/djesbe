@@ -29,6 +29,10 @@ function View(jukebox) {
     self.masterListView.setLabel(queueTitle(self.jukebox.pending()));
     self.screen.render();
   });
+  this.jukebox.on('force-pull', function(track, index) {
+    self.masterListView.addItem(track);
+    self.masterListView.select(index);
+  });
 
   this.setHandlers();
   this.setKeys();
