@@ -94,8 +94,8 @@ Jukebox.prototype.unqueue = function(index) {
 
 // Play a track, and (optionally) set cursor to index
 Jukebox.prototype._play = function(track, index) {
-  if (typeof index === 'number') self._cursor = index;
   var self = this;
+  if (typeof index === 'number') this._cursor = index;
   track.once('end', this._autoAdvance);
   return track.play().then(function() {
     self.emit('advance', self._cursor);
