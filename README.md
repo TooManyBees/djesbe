@@ -6,7 +6,7 @@ Terminal based audio player for Node.js. Written to solve my very specific probl
 
 ![Terminal interface of the app](sample.png)
 
-`node djesbe [path/to/playlists]` loads djesbe as a terminal app.
+`dj [path/to/playlists]` loads djesbe as a terminal app. Path can be left blank to scan the current directory.
 
 The top left pane is a list of `m3u8` files that the app found and parsed. The lower left pane is a list of tracks in the selected playlist. The right pane is the actual queue of tracks to play. As tracks get enqueued, they are grayed out from the track pane (though they are still playable).
 
