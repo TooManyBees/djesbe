@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 var Jukebox = require('./src/jukebox');
 var View = require('./src/view');
 var path = require('path');
