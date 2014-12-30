@@ -1,4 +1,5 @@
 var fs = require('fs');
+var stream = require('stream');
 var Speaker = require('speaker');
 var util = require('util');
 var EventEmitter = require('events').EventEmitter;
@@ -26,7 +27,10 @@ function Track(options) {
 
   this._speaker = null;
   this.size = null;
+  this._progress = 0;
+  this._progressMeter = null;
   this._stop = function() {
+    this._progressMeter = null;
     this._speaker = null;
     this.emit('end');
   }.bind(this);
@@ -43,7 +47,8 @@ Track.prototype.play = function() {
         pl.pipe(self._speaker);
         resolve();
       });
-      self.readable().pipe(player);
+      self._progressMeter = new ProgressMeter(self);
+      self.readable().pipe(self._progressMeter).pipe(player);
     });
   });
 }
@@ -57,6 +62,14 @@ Track.prototype.stop = function() {
       resolve();
     }
   });
+}
+
+Track.prototype.timeRemaining = function() {
+  if (this.size) {
+    return this.duration - Math.floor((this._progress / this.size) * this.duration);
+  } else {
+    return this.duration;
+  }
 }
 
 Track.prototype.isPlaying = function() {
@@ -92,4 +105,16 @@ Track.unique = function(track) {
     registry[track.uri] = newTrack;
     return newTrack;
   }
+}
+
+util.inherits(ProgressMeter, stream.Transform);
+function ProgressMeter(track) {
+  stream.Transform.call(this);
+  this.track = track;
+}
+
+ProgressMeter.prototype._transform = function(chunk, enc, cb) {
+  this.track._progress += chunk.length;
+  this.push(chunk);
+  cb();
 }

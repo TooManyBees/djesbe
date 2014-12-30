@@ -26,12 +26,16 @@ function View(jukebox) {
 
   this.jukebox.on('advance', function(index) {
     self.masterListView.select(index);
-    self.masterListView.setLabel(queueTitle(self.jukebox.pending()));
-    self.screen.render();
+    self.updateQueueLabel();
   });
 
   this.setHandlers();
   this.setKeys();
+  this.screen.render();
+}
+
+View.prototype.updateQueueLabel = function() {
+  this.masterListView.setLabel(queueTitle(this.jukebox.pending()));
   this.screen.render();
 }
 
@@ -43,10 +47,10 @@ View.prototype.setHandlers = function() {
       .done();
   });
   this.masterListView.key('delete, backspace', function() {
-    self.jukebox.unqueue(masterListView.selected)
+    self.jukebox.unqueue(self.masterListView.selected)
       .then(function(queue) {
         if (queue) self.masterListView.setItems(queue);
-        if (self.jukebox.currentTrack().isPlaying()) self.screen.render();
+        self.updateQueueLabel();
       }).done();
   });
 
@@ -183,7 +187,7 @@ function makePlaylistShow(j) {
 
 function durationOfTracks(tracks) {
   var duration = 0;
-  tracks.forEach(function(track) {duration += track.duration});
+  tracks.forEach(function(track) {duration += track.timeRemaining()});
   return duration;
 }
 
