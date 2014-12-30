@@ -1,6 +1,19 @@
 {
-  "name": "dj",
+  "name": "djesbe",
   "version": "0.0.1",
+  "description": "A terminal based audio player",
+  "keywords": ["media", "audio", "player", "playlist", "mp3", "ogg"],
+  "homepage": "https://github.com/TooManyBees/djesbe",
+  "bugs": "https://github.com/TooManyBees/djesbe/issues",
+  "author": {
+    "name": "Jesse Bees",
+    "email": "jesse@toomanybees.com",
+    "url": "http://www.toomanybees.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TooManyBees/djesbe"
+  },
   "dependencies": {
     "blessed": "0.0.37",
     "lame": "^1.1.1",
