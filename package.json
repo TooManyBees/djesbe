@@ -1,6 +1,6 @@
 {
   "name": "djesbe",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A terminal based audio player",
   "keywords": ["media", "audio", "player", "playlist", "mp3", "ogg"],
   "homepage": "https://github.com/TooManyBees/djesbe",
