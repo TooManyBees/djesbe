@@ -1,4 +1,3 @@
-var blessed = require('blessed');
 var Jukebox = require('./src/jukebox');
 var View = require('./src/view');
 
