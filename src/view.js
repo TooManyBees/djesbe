@@ -64,6 +64,17 @@ View.prototype.setHandlers = function() {
     self.playlistShow.focus();
     self.screen.render();
   });
+  this.playlistIndex.key('a', function(ch, key) {
+    var i = self.playlistIndex.selected,
+        data = self.playlistIndex.getItem(i),
+        playlist;
+    if (data) {
+      playlist = data.content;
+      if (playlist.autoPull) playlist.autoPull = false;
+      else playlist.autoPull = true;
+    }
+    self.screen.render()
+  });
 
   this.playlistShow.on('select', function(data, index) {
     self.jukebox.enqueue(data.content);
@@ -152,7 +163,8 @@ function makePlaylistIndex(j) {
     keys: true,
     displayFn: function(pl) {
       var duration = fromSeconds(durationOfTracks(pl));
-      return pl.name + " - " + pl.length + " tracks @ " + duration;
+      var autoPull = pl.autoPull ? " {light-red-fg}(auto){/}" : ""
+      return pl.name + " - " + pl.length + " tracks @ " + duration + autoPull;
     },
   });
   selectionStyle(tl, {bg: 'green', fg: 'light white'});

@@ -183,8 +183,7 @@ Jukebox.prototype.nextTrack = function(dir) {
 
 Jukebox.prototype.autoPullPlaylists = function() {
   return this.playlists.filter(function(list) {
-    // return list.autoPull = true;
-    return list.name === "Adult Surf";
+    return list.autoPull === true;
   });
 }
 
