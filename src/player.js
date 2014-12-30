@@ -7,7 +7,9 @@ module.exports = playerFor;
 var mapping = {
   mp3: function(cb) {
     var lame = new Lame;
-    lame.on('format', cb);
+    lame.on('format', function(format) {
+      cb(format, lame);
+    });
     return lame;
   },
   ogg: function(cb) {

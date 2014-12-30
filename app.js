@@ -63,15 +63,15 @@ var masterListView = TrackList({
 });
 selectionStyle(masterListView, {bg: 'green', fg: 'light white'});
 masterListView.on('select', function(data, index) {
-  j._cursor = index;
-  j.play(data.content);
+  j.play(data.content, index).then(function(){screen.render()});
 });
 masterListView.key('delete, backspace', function() {
-  var newQueue = j.unqueue(masterListView.selected)
-  if (newQueue) {
-    masterListView.setItems(newQueue);
-  }
-  screen.render();
+  j.unqueue(masterListView.selected).then(function(queue) {
+    if (queue) {
+      masterListView.setItems(queue);
+    }
+    screen.render();
+  });
 });
 var playlistIndex = TrackList({
   parent: screen,
@@ -158,10 +158,10 @@ screen.key('S-tab', function(ch, key) {
   }
 });
 screen.key('S-right', function(ch, key) {
-  j.advance(1);
+  j.advance(1).then(function(){screen.render()});
 });
 screen.key('S-left', function(ch, key) {
-  j.advance(-1);
+  j.advance(-1).then(function(){screen.render()});
 });
 
 function durationOfTracks(tracks) {
