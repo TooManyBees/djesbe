@@ -43,10 +43,12 @@ View.prototype.setHandlers = function() {
       .done();
   });
   this.masterListView.key('delete, backspace', function() {
-    self.jukebox.unqueue(masterListView.selected)
+    self.jukebox.unqueue(self.masterListView.selected)
       .then(function(queue) {
-        if (queue) self.masterListView.setItems(queue);
-        if (self.jukebox.currentTrack().isPlaying()) self.screen.render();
+        if (queue) {
+          self.masterListView.setItems(queue);
+          self.screen.render();
+        }
       }).done();
   });
 
