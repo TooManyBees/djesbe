@@ -1,10 +1,16 @@
 var Jukebox = require('./src/jukebox');
 var View = require('./src/view');
+var path = require('path');
 
-var playlistDir = process.argv[2] || "./playlists";
+var playlistDir = path.resolve(process.argv[2] || ".");
 
 var j = new Jukebox();
 
-j.load(playlistDir).then(function() {
-  View(j);
-}).done();
+j.load(playlistDir)
+  .then(function() {
+    View(j);
+  })
+  .catch(function(err) {
+    console.error("Error: "+err);
+  })
+  .done();
