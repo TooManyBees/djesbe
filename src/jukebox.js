@@ -2,12 +2,10 @@ var Q = require('q');
 var fs = require('fs');
 var m3u8parse = Q.nfbind(require('m3u8parse'));
 var readdir = Q.nfbind(fs.readdir);
-var Speaker = require('speaker');
 var util = require('util');
 var EventEmitter = require('events').EventEmitter;
 
 var Track = require('./track');
-var playerFor = require('./player');
 var newlineAgnosticStream = require('./newline_agnostic_stream');
 
 const ALLOWED_EXTENSIONS = {
@@ -25,11 +23,9 @@ function Jukebox() {
   this.queue = [];
   this._cursor = 0; // NEXT track to play, not current track
   this._playing = false;
-  this._speaker = null;
 
   this._autoAdvance = function() {
-    this._speaker = null;
-    this.advance(1);
+    this._advance(1, true);
   }.bind(this);
 };
 
@@ -72,78 +68,102 @@ Jukebox.prototype.enqueue = function(track) {
 };
 
 Jukebox.prototype.unqueue = function(index) {
-  // Assume that a track can/will be enqueued multiple times.
-  // We can't just indexOf to find it, we have to use the index.
-  if (index === this._cursor && this._playing) this.advance(1);
-  if (index <= this._cursor && this._cursor > 0) this._cursor--;
-  // Attempt a splice, but only return the changed queue if
-  // something got spliced out. (i.e. index out of bounds
-  // harmlessly fizzles)
-  if (this.queue.splice(index, 1)[0]) return this.queue;
+  var self = this;
+  function snipSnip() {
+    // Assume that a track can/will be enqueued multiple times.
+    // We can't just indexOf to find it, we have to use the index.
+    if (index <= self._cursor && self._cursor > 0) self._cursor--;
+    // Attempt a splice, but only return the changed queue if
+    // something got spliced out. (i.e. index out of bounds
+    // harmlessly fizzles)
+    if (self.queue.splice(index, 1)[0]) return self.queue;
+  }
+
+  if (this.queue[index] === this.currentTrack()) {
+    return this.advance(1).then(snipSnip);
+  } else {
+    return Q(snipSnip());
+  }
 }
 
-Jukebox.prototype._stopAnd = function(cb) {
+/*
+ * General theme here: methods starting with _ do exactly what
+ * they say. The associated method without a _ does cleanup,
+ * validity checks, etc. before calling its _method.
+ */
+
+// Play a track, and (optionally) set cursor to index
+Jukebox.prototype._play = function(track, index) {
+  if (typeof index === 'number') self._cursor = index;
   var self = this;
-  cb = cb || function(){ self._speaker = null; };
-  if (this._speaker) {
-    this._speaker.removeListener('close', this._autoAdvance);
-    this._speaker.end(cb);
-  } else {
-    cb();
-  }
+  track.once('end', this._autoAdvance);
+  return track.play().then(function() {
+    self.emit('advance', self._cursor);
+  });
+}
+
+// Play a track, after interrupting the current track
+Jukebox.prototype.play = function(track, index) {
+  var self = this;
+  return this.stop(this.currentTrack())
+  .then(function() {
+    return self._play(track, index);
+  });
 }
 
 Jukebox.prototype.playPause = function() {
-  if (this._playing) {
-    this.stop();
-  } else if (this.currentTrack()) {
-    this.play(this.currentTrack());
+  if (!(this.currentTrack() instanceof Track)) return Q(false);
+  if (this.currentTrack().isPlaying()) {
+    return this.stop(this.currentTrack());
+  } else {
+    return this._play(this.currentTrack());
   }
-}
-
-Jukebox.prototype.stop = function() {
-  var self = this;
-  if (this._playing) {
-    this._playing = false;
-    this._stopAnd(function() {
-      self._speaker = null;
-      self.emit('stop', this._cursor);
-    });
-  }
-}
-
-Jukebox.prototype.play = function(track) {
-  var self = this;
-  var playTrack = function() {
-    // the callback takes 2 arguments because ogg is a wrapped
-    // format. We're piping into the inner decoder (pl) in the
-    // callback, but piping the read stream into the outer decoder
-    // (player)
-    var player = playerFor(track.extension, function(format, pl) {
-      self._playing = true;
-      self._speaker = new Speaker(format);
-      self._speaker.on('close', self._autoAdvance);
-      self.emit('advance', self._cursor);
-      pl.pipe(self._speaker);
-    });
-    track.readable().pipe(player);
-  }
-  this._stopAnd(playTrack);
 }
 
 Jukebox.prototype.advance = function(dir) {
-  if (!(this.queue[this._cursor + dir] instanceof Track)) return;
-  this._cursor += dir;
-  var next = this.currentTrack();
-  if (this._playing) {
-    this.play(next);
+  var self = this;
+  var currentTrack = this.currentTrack();
+  if (!currentTrack) return Q();
+  var autoAdvance = currentTrack.isPlaying();
+  return this.stop(currentTrack)
+    .then(function() {
+      return self._advance(dir, autoAdvance);
+    });
+}
+
+// Plays the next track. Assumes we've already cleaned up
+// previous track and checked for autoplay status, etc.
+Jukebox.prototype._advance = function(dir, autoAdvance) {
+  var nextTrack = this.nextTrack(dir);
+  if (!nextTrack) return Q();
+  if (autoAdvance) {
+    return this._play(nextTrack)
   } else {
-    this.emit('advance');
+    this.emit('advance', this._cursor);
+    return Q();
   }
+}
+
+Jukebox.prototype.stop = function(track) {
+  track.removeListener('end', this._autoAdvance);
+  return track.stop();
 }
 
 Jukebox.prototype.currentTrack = function() {
   return this.queue[this._cursor] || null;
+}
+
+// I'm a terrible person. This has a return value
+// AND mutates internal state. Yeah, you heard me.
+// Go fuck yourselves, FP snobs.
+Jukebox.prototype.nextTrack = function(dir) {
+  var nextTrack = this.queue[this._cursor + dir];
+  if (nextTrack) {
+    this._cursor += dir;
+    return nextTrack;
+  } else {
+    return null;
+  }
 }
 
 function loadPlaylist(filename) {
