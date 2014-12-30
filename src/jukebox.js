@@ -103,8 +103,7 @@ Jukebox.prototype._play = function(track, index) {
 // Play a track, after interrupting the current track
 Jukebox.prototype.play = function(track, index) {
   var self = this;
-  this.currentTrack().removeListener('end', this._autoAdvance);
-  return this.currentTrack().stop()
+  return this.stop(this.currentTrack())
   .then(function() {
     return self._play(track, index);
   });
@@ -113,7 +112,7 @@ Jukebox.prototype.play = function(track, index) {
 Jukebox.prototype.playPause = function() {
   if (!(this.currentTrack() instanceof Track)) return Q(false);
   if (this.currentTrack().isPlaying()) {
-    return this.currentTrack().stop();
+    return this.stop(this.currentTrack());
   } else {
     return this.currentTrack().play();
   }
@@ -123,9 +122,8 @@ Jukebox.prototype.advance = function(dir) {
   var self = this;
   var currentTrack = this.currentTrack();
   if (!currentTrack) return Q();
-  currentTrack.removeListener('end', this._autoAdvance);
   var autoAdvance = currentTrack.isPlaying();
-  return currentTrack.stop()
+  return this.stop(currentTrack)
     .then(function() {
       if (autoAdvance) return self._advance(dir);
       else return true;
@@ -138,6 +136,11 @@ Jukebox.prototype._advance = function(dir) {
   var nextTrack = this.nextTrack(dir);
   if (nextTrack) return this._play(nextTrack);
   else return Q();
+}
+
+Jukebox.prototype.stop = function(track) {
+  track.removeListener('end', this._autoAdvance);
+  return track.stop();
 }
 
 Jukebox.prototype.currentTrack = function() {
