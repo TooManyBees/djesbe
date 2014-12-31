@@ -145,18 +145,20 @@ View.prototype.setHandlers = function(i) {
       self.screen.render()
     }
   });
-  this.playlistIndex.key('e', function(ch, key) {
+  this.playlistIndex.key('e, S-e', function(ch, key) {
     var playlist = getSelectedPlaylist(self.playlistIndex);
     if (playlist) {
-      enqueueAllTracks(playlist);
+      // shift-e calls enqueuAllTracks with includeEnqueued=true
+      enqueueAllTracks(playlist, key.shift);
       setQueueLabel();
       self.screen.render();
     }
   });
   instructions(this.playlistIndex, i, {
     Enter: 'browse selected playlist',
-    A: 'toggle autoplay (queue draws from here if empty)',
-    E: 'enqueue all tracks at once',
+    A: 'toggle autoplay',
+    E: 'enqueue unplayed tracks',
+    'S-E': 'enqueue ALL tracks'
   });
 
   this.playlistShow.on('select', function(data, index) {
@@ -192,7 +194,7 @@ View.prototype.setHandlers = function(i) {
 
   function enqueueAllTracks(playlist, includeEnqueued) {
     playlist.filter(function(track) {
-      return true || includeEnqueued || self.jukebox.isNotEnqueued(track);
+      return includeEnqueued || self.jukebox.isNotEnqueued(track);
     }).forEach(function(track) {
       enqueueTrack(track);
     });
