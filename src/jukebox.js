@@ -25,15 +25,22 @@ function Jukebox() {
   this._cursor = 0; // NEXT track to play, not current track
 
   this._autoAdvance = function() {
-    clearInterval(this._heartbeat);
     this._advance(1, true);
+  }.bind(this);
+  this._endHeartbeat = function() {
+    if (this._heartbeat !== undefined) {
+      clearInterval(this._heartbeat);
+      delete this._heartbeat;
+    }
   }.bind(this);
 };
 
 Jukebox.prototype._beginHeartbeat = function() {
+  if (this._heartbeat !== undefined) return;
   this._heartbeat = setInterval(function(self) {
+    // console.log('♥');
     self.emit('heartbeat');
-  }, 1000, this);
+  }, 1500, this);
 }
 
 Jukebox.prototype.load = function(dirname) {
@@ -113,6 +120,7 @@ Jukebox.prototype.unqueue = function(index) {
 Jukebox.prototype._play = function(track, index) {
   var self = this;
   if (typeof index === 'number') this._cursor = index;
+  track.once('end', this._endHeartbeat);
   track.once('end', this._autoAdvance);
   return track.play().then(function() {
     self._beginHeartbeat();
