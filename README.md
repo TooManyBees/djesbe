@@ -44,7 +44,6 @@ A `Jukebox` loads the playlists, maintains the queue of tracks to play, and keep
 # To do
 
 1. The queue needs its own model to move logic out of Jukebox
-5. Remember progress of current track, so after pausing we can resume from where we left off
 
 # Bites
 
