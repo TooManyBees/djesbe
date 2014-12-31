@@ -115,11 +115,21 @@ Track.unique = function(track) {
 util.inherits(ProgressMeter, stream.Transform);
 function ProgressMeter(track) {
   stream.Transform.call(this);
+  this.begin = track._progress;
+  this.progress = 0;
   this.track = track;
 }
 
 ProgressMeter.prototype._transform = function(chunk, enc, cb) {
-  this.track._progress += chunk.length;
-  this.push(chunk);
+  // Some sort of buffering by speaker or player means that we
+  // need to start passing chunks through to the speaker one
+  // chunk before we stopped, lest we'll miss a couple seconds
+  // of play time.
+  if (this.progress + (chunk.length*2) >= this.begin) {
+    this.track._progress = this.progress += chunk.length;
+    this.push(chunk);
+  } else {
+    this.progress += chunk.length;
+  }
   cb();
 }
