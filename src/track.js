@@ -53,7 +53,7 @@ Track.prototype.play = function() {
   });
 }
 
-Track.prototype.stop = function() {
+Track.prototype.pause = function() {
   var self = this;
   return Q.Promise(function(resolve, reject) {
     if (self._speaker) {
@@ -62,6 +62,11 @@ Track.prototype.stop = function() {
       resolve();
     }
   });
+}
+
+Track.prototype.stop = function() {
+  this._progress = 0;
+  return this.pause();
 }
 
 Track.prototype.timeRemaining = function() {
