@@ -155,7 +155,7 @@ View.prototype.setHandlers = function(i) {
     }
   });
   instructions(this.playlistIndex, i, {
-    Enter: 'browse selected playlist',
+    Enter: 'browse playlist',
     A: 'toggle autoplay',
     E: 'enqueue unplayed tracks',
     'S-E': 'enqueue ALL tracks',
