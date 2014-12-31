@@ -52,16 +52,6 @@ function View(jukebox) {
   interactivePanes.append(this.playlistIndex);
   interactivePanes.append(this.playlistShow);
 
-  this.jukebox.on('advance', function(index) {
-    self.masterListView.select(index);
-    self.masterListView.setLabel(queueTitle(self.jukebox.pending()));
-    self.screen.render();
-  });
-  this.jukebox.on('force-pull', function(track, index) {
-    self.masterListView.addItem(track);
-    self.masterListView.select(index);
-  });
-
   this.setHandlers(instructionLines);
   this.playlistIndex.setItems(this.jukebox.playlists);
   this.playlistIndex.focus();
@@ -109,6 +99,16 @@ View.prototype.setHandlers = function(i) {
       .done();
   });
 
+  this.jukebox.on('advance', function(index) {
+    self.masterListView.select(index);
+    setQueueLabel();
+    self.screen.render();
+  });
+  this.jukebox.on('force-pull', function(track, index) {
+    self.masterListView.addItem(track);
+    self.masterListView.select(index);
+  });
+
   this.masterListView.on('select', function(data, index) {
     if (!data) return;
     self.jukebox
@@ -148,11 +148,8 @@ View.prototype.setHandlers = function(i) {
   this.playlistIndex.key('e', function(ch, key) {
     var playlist = getSelectedPlaylist(self.playlistIndex);
     if (playlist) {
-      playlist.forEach(function(track) {
-        self.jukebox.enqueue(track);
-        self.masterListView.addItem(track);
-      });
-      self.masterListView.setLabel(queueTitle(self.jukebox.pending()));
+      enqueueAllTracks(playlist);
+      setQueueLabel();
       self.screen.render();
     }
   });
@@ -163,9 +160,8 @@ View.prototype.setHandlers = function(i) {
   });
 
   this.playlistShow.on('select', function(data, index) {
-    self.jukebox.enqueue(data.content);
-    self.masterListView.addItem(data.content);
-    self.masterListView.setLabel(queueTitle(self.jukebox.pending()));
+    enqueueTrack(data.content);
+    setQueueLabel();
     self.screen.render();
   });
   this.playlistShow.on('cancel', function(data, index) {
@@ -183,6 +179,23 @@ View.prototype.setHandlers = function(i) {
         data = self.playlistIndex.getItem(i),
         playlist;
     if (data) return data.content;
+  }
+
+  function setQueueLabel() {
+    self.masterListView.setLabel(queueTitle(self.jukebox.pending()));
+  }
+
+  function enqueueTrack(track) {
+    self.jukebox.enqueue(track);
+    self.masterListView.addItem(track);
+  }
+
+  function enqueueAllTracks(playlist, includeEnqueued) {
+    playlist.filter(function(track) {
+      return true || includeEnqueued || self.jukebox.isNotEnqueued(track);
+    }).forEach(function(track) {
+      enqueueTrack(track);
+    });
   }
 }
 
