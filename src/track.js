@@ -15,6 +15,8 @@ var uniqueId = 0;
 
 var registry = {};
 
+const chunkSize = 65536;
+
 util.inherits(Track, EventEmitter);
 function Track(options) {
   EventEmitter.call(this);
@@ -71,7 +73,10 @@ Track.prototype.stop = function() {
 
 Track.prototype.timeRemaining = function() {
   if (this.size) {
-    return this.duration - Math.floor((this._progress / this.size) * this.duration);
+    // Account for the fact that we'll buffer a chunk or two before
+    // the track starts playing.
+    var pct = (this._progress - 2 * chunkSize) / this.size;
+    return this.duration - Math.floor(pct * this.duration);
   } else {
     return this.duration;
   }
