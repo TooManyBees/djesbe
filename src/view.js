@@ -138,15 +138,12 @@ View.prototype.setHandlers = function(i) {
     self.screen.render();
   });
   this.playlistIndex.key('a', function(ch, key) {
-    var i = self.playlistIndex.selected,
-        data = self.playlistIndex.getItem(i),
-        playlist;
-    if (data) {
-      playlist = data.content;
+    var playlist = getSelectedPlaylist(self.playlistIndex);
+    if (playlist) {
       if (playlist.autoPull) playlist.autoPull = false;
       else playlist.autoPull = true;
+      self.screen.render()
     }
-    self.screen.render()
   });
   instructions(this.playlistIndex, i, {
     Enter: 'browse selected playlist',
@@ -168,6 +165,13 @@ View.prototype.setHandlers = function(i) {
     Enter: 'enqueue track',
     Esc: 'return to playlist selection'
   });
+
+  function getSelectedPlaylist(list) {
+    var i = self.playlistIndex.selected,
+        data = self.playlistIndex.getItem(i),
+        playlist;
+    if (data) return data.content;
+  }
 }
 
 function makeMasterListView(j) {
