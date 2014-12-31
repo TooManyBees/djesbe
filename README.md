@@ -6,7 +6,7 @@ Terminal based audio player for Node.js. Written to solve my very specific probl
 
 ![Terminal interface of the app](sample.png)
 
-`node djesbe [path/to/playlists]` loads djesbe as a terminal app.
+`dj [path/to/playlists]` loads djesbe as a terminal app. Path can be left blank to scan the current directory.
 
 The top left pane is a list of `m3u8` files that the app found and parsed. The lower left pane is a list of tracks in the selected playlist. The right pane is the actual queue of tracks to play. As tracks get enqueued, they are grayed out from the track pane (though they are still playable).
 
@@ -16,11 +16,14 @@ From anywhere
 * `shift-right` and `shift-left` skip forward and backward in the queue
 
 From the playlist pane (app starts with it focused)
-* `enter` selects a playlist and expands the track pane.
+* `enter` selects a playlist and expands the track pane
+* `a` marks a playlist as "autoplay." The jukebox will pull from this list if the queue runs dry
+* `e` enqueues all tracks at once, ignoring those already queued up. `shift-e` enqueues everything without checking
 
 From the track pane
 * `enter` enqueues a track
-* `escape` shrinks the pane and returns focus to the playlist pane.
+* `escape` shrinks the pane and returns focus to the playlist pane
+* `e` and `shift-e`, as above
 
 From the queue
 * `enter` skips directly to the selected track and plays it
@@ -41,8 +44,6 @@ A `Jukebox` loads the playlists, maintains the queue of tracks to play, and keep
 # To do
 
 1. The queue needs its own model to move logic out of Jukebox
-3. Ability to enqueue an entire playlist's tracks
-4. Ability to mark playlists as "shufflable" and have the app automatically pull from those playlists when the queue runs out.
 5. Remember progress of current track, so after pausing we can resume from where we left off
 
 # Bites

@@ -23,7 +23,6 @@ function Jukebox() {
 
   this.queue = [];
   this._cursor = 0; // NEXT track to play, not current track
-  this._playing = false;
 
   this._autoAdvance = function() {
     clearInterval(this._heartbeat);
@@ -71,6 +70,10 @@ Jukebox.prototype.hasPlayed = function(track) {
 
 Jukebox.prototype.isEnqueued = function(track) {
   return this.queue.indexOf(track) > -1;
+}
+
+Jukebox.prototype.isNotEnqueued = function(track) {
+  return !this.isEnqueued(track);
 }
 
 Jukebox.prototype.pending = function() {
@@ -176,9 +179,29 @@ Jukebox.prototype.nextTrack = function(dir) {
   if (nextTrack) {
     this._cursor += dir;
     return nextTrack;
+  } else if (this.autoPullPlaylists().length && (nextTrack = this._randomSelect())) {
+    this._cursor = this.queue.length;
+    this.enqueue(nextTrack);
+    this.emit('force-pull', nextTrack, this._cursor); // View must detect this and add track to master list
+    return nextTrack;
   } else {
     return null;
   }
+}
+
+Jukebox.prototype.autoPullPlaylists = function() {
+  return this.playlists.filter(function(list) {
+    return list.autoPull === true;
+  });
+}
+
+Jukebox.prototype._randomSelect = function() {
+  var pool = [],
+      self = this;
+  this.autoPullPlaylists().forEach(function(list) {
+    pool = pool.concat(list.filter(self.isNotEnqueued.bind(self)));
+  });
+  return pool[Math.floor(pool.length * Math.random())];
 }
 
 function loadPlaylist(filename) {

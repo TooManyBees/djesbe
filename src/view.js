@@ -11,77 +11,66 @@ function View(jukebox) {
   var self = this;
 
   this.screen = blessed.screen();
+  var instructions = blessed.Box({
+    width: '100%',
+    height: 2,
+    bottom: 0,
+    left: 0,
+    align: 'left',
+    parseTags: true,
+  });
+  var instructionLines = {
+    specific: blessed.Box({
+      height: 1,
+      top: 0,
+      align: 'left',
+      parseTags: true,
+    }),
+    global: blessed.Box({
+      height: 1,
+      bottom: 0,
+      align: 'right',
+      parseTags: true,
+    }),
+  };
+  instructions.append(instructionLines.specific);
+  instructions.append(instructionLines.global);
+  var interactivePanes = blessed.Box({
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 2
+  });
+
   this.jukebox = jukebox;
 
   this.masterListView = makeMasterListView(this.jukebox);
   this.playlistIndex = makePlaylistIndex(this.jukebox);
   this.playlistShow = makePlaylistShow(this.jukebox);
 
-  this.screen.append(this.masterListView);
-  this.screen.append(this.playlistIndex);
-  this.screen.append(this.playlistShow);
+  interactivePanes.append(this.masterListView);
+  interactivePanes.append(this.playlistIndex);
+  interactivePanes.append(this.playlistShow);
 
+  this.setHandlers(instructionLines);
   this.playlistIndex.setItems(this.jukebox.playlists);
   this.playlistIndex.focus();
 
-  this.jukebox.on('advance', function(index) {
-    self.masterListView.select(index);
-    self.updateQueueLabel();
-  });
-
-  this.jukebox.on('heartbeat', function() {
-    self.updateQueueLabel();
-  });
-
-  this.setHandlers();
-  this.setKeys();
+  this.screen.append(interactivePanes);
+  this.screen.append(instructions);
   this.screen.render();
 }
 
-View.prototype.updateQueueLabel = function() {
-  this.masterListView.setLabel(queueTitle(this.jukebox.pending()));
-  this.screen.render();
-}
+var constantKeys = {
+  space: 'play/pause',
+  'S-right': 'skip forward',
+  'S-left': 'skip backward',
+  'Tab': 'focus/unfocus queue',
+};
 
-View.prototype.setHandlers = function() {
+View.prototype.setHandlers = function(i) {
   var self = this;
-  this.masterListView.on('select', function(data, index) {
-    self.jukebox
-      .play(data.content, index)
-      .done();
-  });
-  this.masterListView.key('delete, backspace', function() {
-    self.jukebox.unqueue(self.masterListView.selected)
-      .then(function(queue) {
-        if (queue) self.masterListView.setItems(queue);
-        self.updateQueueLabel();
-      }).done();
-  });
 
-  this.playlistIndex.on('select', function(data, index) {
-    var playlist = data.content;
-    self.playlistShow.setLabel(" "+playlist.name+" ");
-    self.playlistShow.setItems(playlist);
-    self.playlistShow.height = '100%';
-    self.playlistShow.focus();
-    self.screen.render();
-  });
-
-  this.playlistShow.on('select', function(data, index) {
-    self.jukebox.enqueue(data.content);
-    self.masterListView.addItem(data.content);
-    self.masterListView.setLabel(queueTitle(self.jukebox.pending()));
-    self.screen.render();
-  });
-  this.playlistShow.on('cancel', function(data, index) {
-    self.playlistShow.height = '50%';
-    self.playlistIndex.focus();
-    self.screen.render();
-  });
-}
-
-View.prototype.setKeys = function() {
-  var self = this;
   this.screen.key('C-c', function(ch, key) {
     return process.exit(0);
   });
@@ -109,6 +98,121 @@ View.prototype.setKeys = function() {
       .advance(-1)
       .done();
   });
+
+  this.jukebox.on('advance', function(index) {
+    self.masterListView.select(index);
+    setQueueLabel();
+    self.screen.render();
+  });
+  this.jukebox.on('heartbeat', function() {
+    setQueueLabel();
+    self.screen.render();
+  });
+  this.jukebox.on('force-pull', function(track, index) {
+    self.masterListView.addItem(track);
+    self.masterListView.select(index);
+  });
+
+  this.masterListView.on('select', function(data, index) {
+    if (!data) return;
+    self.jukebox
+      .play(data.content, index)
+      .done();
+  });
+  this.masterListView.key('delete, backspace', function() {
+    self.jukebox.unqueue(self.masterListView.selected)
+      .then(function(queue) {
+        if (queue) {
+          self.masterListView.setItems(queue);
+          setQueueLabel();
+          self.screen.render();
+        }
+      }).done();
+  });
+  instructions(this.masterListView, i, {
+    'Enter': 'skip directly to track',
+    'Del/Backspace': 'remove track from queue',
+  });
+
+  this.playlistIndex.on('select', function(data, index) {
+    var playlist = data.content;
+    self.playlistShow.setLabel(" "+playlist.name+" ");
+    self.playlistShow.setItems(playlist);
+    self.playlistShow.height = '100%';
+    self.playlistShow.focus();
+    self.screen.render();
+  });
+  this.playlistIndex.key('a', function(ch, key) {
+    var playlist = getSelectedPlaylist(self.playlistIndex);
+    if (playlist) {
+      if (playlist.autoPull) playlist.autoPull = false;
+      else playlist.autoPull = true;
+      self.screen.render()
+    }
+  });
+  this.playlistIndex.key('e, S-e', function(ch, key) {
+    var playlist = getSelectedPlaylist(self.playlistIndex);
+    if (playlist) {
+      // shift-e calls enqueuAllTracks with includeEnqueued=true
+      enqueueAllTracks(playlist, key.shift);
+      setQueueLabel();
+      self.screen.render();
+    }
+  });
+  instructions(this.playlistIndex, i, {
+    Enter: 'browse playlist',
+    A: 'toggle autoplay',
+    E: 'enqueue unplayed tracks',
+    'S-E': 'enqueue ALL tracks',
+  });
+
+  this.playlistShow.on('select', function(data, index) {
+    enqueueTrack(data.content);
+    setQueueLabel();
+    self.screen.render();
+  });
+  this.playlistShow.on('cancel', function(data, index) {
+    self.playlistShow.height = '50%';
+    self.playlistIndex.focus();
+    self.screen.render();
+  });
+  this.playlistShow.key('e, S-e', function(ch, key) {
+    // shift-e calls enqueuAllTracks with includeEnqueued=true
+    var playlist = self.playlistShow.ritems;
+    enqueueAllTracks(playlist, key.shift);
+    setQueueLabel();
+    self.screen.render();
+  });
+  instructions(this.playlistShow, i, {
+    Enter: 'enqueue track',
+    Esc: 'return to playlist selection',
+    E: 'enqueue unplayed tracks',
+    'S-E': 'enqueue ALL tracks',
+  });
+
+  function getSelectedPlaylist(list) {
+    var i = self.playlistIndex.selected,
+        data = self.playlistIndex.getItem(i),
+        playlist;
+    if (data) return data.content;
+  }
+
+  function setQueueLabel() {
+    self.masterListView.setLabel(queueTitle(self.jukebox.pending()));
+  }
+
+  function enqueueTrack(track) {
+    self.jukebox.enqueue(track);
+    self.masterListView.addItem(track);
+  }
+
+  function enqueueAllTracks(playlist, includeEnqueued) {
+    playlist.filter(function(track) {
+      return includeEnqueued || self.jukebox.isNotEnqueued(track);
+    }).forEach(function(track) {
+      enqueueTrack(track);
+    });
+  }
 }
 
 function makeMasterListView(j) {
@@ -154,7 +258,8 @@ function makePlaylistIndex(j) {
     keys: true,
     displayFn: function(pl) {
       var duration = fromSeconds(durationOfTracks(pl));
-      return pl.name + " - " + pl.length + " tracks @ " + duration;
+      var autoPull = pl.autoPull ? " {light-red-fg}(auto){/}" : ""
+      return pl.name + " - " + pl.length + " tracks @ " + duration + autoPull;
     },
   });
   selectionStyle(tl, {bg: 'green', fg: 'light white'});
@@ -225,5 +330,20 @@ function selectionStyle(list, opts) {
   list.on('blur', function() {
     list.style.selected.bg = undefined;
     list.style.selected.fg = undefined;
+  });
+}
+
+function instructions(list, lines, keys) {
+  var focusSpecificHelp = [];
+  var globalHelp = [];
+  Object.keys(keys).forEach(function(key) {
+    focusSpecificHelp.push("{light-magenta-fg}"+key+":{/} "+keys[key]);
+  });
+  Object.keys(constantKeys).forEach(function(key) {
+    globalHelp.push("{cyan-fg}"+key+":{/} "+constantKeys[key]);
+  });
+  list.on('focus', function() {
+    lines.specific.setContent(focusSpecificHelp.join(" "));
+    lines.global.setContent(globalHelp.join(" "));
   });
 }
