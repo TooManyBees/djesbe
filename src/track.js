@@ -30,9 +30,7 @@ function Track(options) {
   this._speaker = null;
   this.size = null;
   this._progress = 0;
-  this._progressMeter = null;
   this._stop = function() {
-    this._progressMeter = null;
     this._speaker = null;
     this.emit('end');
   }.bind(this);
@@ -49,8 +47,7 @@ Track.prototype.play = function() {
         pl.pipe(self._speaker);
         resolve();
       });
-      self._progressMeter = new ProgressMeter(self);
-      self.readable().pipe(self._progressMeter).pipe(player);
+      self.readable().pipe(new ProgressMeter(self)).pipe(player);
     });
   });
 }
