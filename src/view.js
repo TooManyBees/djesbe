@@ -104,6 +104,10 @@ View.prototype.setHandlers = function(i) {
     setQueueLabel();
     self.screen.render();
   });
+  this.jukebox.on('heartbeat', function() {
+    setQueueLabel();
+    self.screen.render();
+  });
   this.jukebox.on('force-pull', function(track, index) {
     self.masterListView.addItem(track);
     self.masterListView.select(index);
@@ -120,6 +124,7 @@ View.prototype.setHandlers = function(i) {
       .then(function(queue) {
         if (queue) {
           self.masterListView.setItems(queue);
+          setQueueLabel();
           self.screen.render();
         }
       }).done();
@@ -291,7 +296,7 @@ function makePlaylistShow(j) {
 
 function durationOfTracks(tracks) {
   var duration = 0;
-  tracks.forEach(function(track) {duration += track.duration});
+  tracks.forEach(function(track) {duration += track.timeRemaining()});
   return duration;
 }
 
