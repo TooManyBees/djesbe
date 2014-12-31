@@ -158,7 +158,7 @@ View.prototype.setHandlers = function(i) {
     Enter: 'browse selected playlist',
     A: 'toggle autoplay',
     E: 'enqueue unplayed tracks',
-    'S-E': 'enqueue ALL tracks'
+    'S-E': 'enqueue ALL tracks',
   });
 
   this.playlistShow.on('select', function(data, index) {
@@ -171,9 +171,18 @@ View.prototype.setHandlers = function(i) {
     self.playlistIndex.focus();
     self.screen.render();
   });
+  this.playlistShow.key('e, S-e', function(ch, key) {
+    // shift-e calls enqueuAllTracks with includeEnqueued=true
+    var playlist = self.playlistShow.ritems;
+    enqueueAllTracks(playlist, key.shift);
+    setQueueLabel();
+    self.screen.render();
+  });
   instructions(this.playlistShow, i, {
     Enter: 'enqueue track',
-    Esc: 'return to playlist selection'
+    Esc: 'return to playlist selection',
+    E: 'enqueue unplayed tracks',
+    'S-E': 'enqueue ALL tracks',
   });
 
   function getSelectedPlaylist(list) {
