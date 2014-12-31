@@ -2,6 +2,15 @@ var blessed = require('blessed');
 
 module.exports = TrackList;
 
+// I want to put objects inside a List. Blessed's list appears to only
+// support strings, perhaps expecting me to synchronize a backing array
+// of objects to the list, and reference them by index... nah.
+// TrackList exists solely to insert TrackBoxes into it.
+// TrackBox is the same as Box, but accepts two new options:
+//   playlistIndex, which is the index of the item in the list
+//   displayFn, which is a function that returns a string, which is how
+//     the item will appear in the list
+
 function TrackList(options) {
   if (!(this instanceof blessed.Node)) {
     return new TrackList(options);
@@ -52,6 +61,7 @@ TrackList.prototype.appendItem = function(item) {
     };
   });
 
+  // EsBe's changes: (used to be new Box)
   var item = new TrackBox(options, this.items.length);
 
   this.items.push(item);
@@ -82,6 +92,7 @@ function TrackBox(options, playlistIndex) {
 
 TrackBox.prototype.__proto__ = blessed.box.prototype;
 
+// EsBe's changes: this is a constant that was referenced from the original context
 var wideChars = new RegExp('(['
   + '\\uff01-\\uffbe'
   + '\\uffc2-\\uffc7'
@@ -96,6 +107,8 @@ TrackBox.prototype.parseContent = function(noTags) {
   if (this.detached) return false;
 
   var width = this.width - this.iwidth;
+  // EsBe's changes: displayContent applies displayFn to content
+  //   it returns a string, as the original box prototype expected
   var displayContent = this.displayFn(this.content, this.playlistIndex);
   if (this._clines == null
       || this._clines.width !== width
