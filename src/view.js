@@ -42,6 +42,7 @@ function View(jukebox) {
 View.prototype.setHandlers = function() {
   var self = this;
   this.masterListView.on('select', function(data, index) {
+    if (!data) return;
     self.jukebox
       .play(data.content, index)
       .done();
