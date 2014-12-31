@@ -44,16 +44,13 @@ function View(jukebox) {
 
   this.jukebox = jukebox;
 
-  this.masterListView = makeMasterListView(this.jukebox, instructionLines);
-  this.playlistIndex = makePlaylistIndex(this.jukebox, instructionLines);
-  this.playlistShow = makePlaylistShow(this.jukebox, instructionLines);
+  this.masterListView = makeMasterListView(this.jukebox);
+  this.playlistIndex = makePlaylistIndex(this.jukebox);
+  this.playlistShow = makePlaylistShow(this.jukebox);
 
   interactivePanes.append(this.masterListView);
   interactivePanes.append(this.playlistIndex);
   interactivePanes.append(this.playlistShow);
-
-  this.playlistIndex.setItems(this.jukebox.playlists);
-  this.playlistIndex.focus();
 
   this.jukebox.on('advance', function(index) {
     self.masterListView.select(index);
@@ -65,62 +62,13 @@ function View(jukebox) {
     self.masterListView.select(index);
   });
 
-  this.setHandlers();
-  this.setKeys();
+  this.setHandlers(instructionLines);
+  this.playlistIndex.setItems(this.jukebox.playlists);
+  this.playlistIndex.focus();
+
   this.screen.append(interactivePanes);
   this.screen.append(instructions);
   this.screen.render();
-}
-
-View.prototype.setHandlers = function() {
-  var self = this;
-  this.masterListView.on('select', function(data, index) {
-    if (!data) return;
-    self.jukebox
-      .play(data.content, index)
-      .done();
-  });
-  this.masterListView.key('delete, backspace', function() {
-    self.jukebox.unqueue(self.masterListView.selected)
-      .then(function(queue) {
-        if (queue) {
-          self.masterListView.setItems(queue);
-          self.screen.render();
-        }
-      }).done();
-  });
-
-  this.playlistIndex.on('select', function(data, index) {
-    var playlist = data.content;
-    self.playlistShow.setLabel(" "+playlist.name+" ");
-    self.playlistShow.setItems(playlist);
-    self.playlistShow.height = '100%';
-    self.playlistShow.focus();
-    self.screen.render();
-  });
-  this.playlistIndex.key('a', function(ch, key) {
-    var i = self.playlistIndex.selected,
-        data = self.playlistIndex.getItem(i),
-        playlist;
-    if (data) {
-      playlist = data.content;
-      if (playlist.autoPull) playlist.autoPull = false;
-      else playlist.autoPull = true;
-    }
-    self.screen.render()
-  });
-
-  this.playlistShow.on('select', function(data, index) {
-    self.jukebox.enqueue(data.content);
-    self.masterListView.addItem(data.content);
-    self.masterListView.setLabel(queueTitle(self.jukebox.pending()));
-    self.screen.render();
-  });
-  this.playlistShow.on('cancel', function(data, index) {
-    self.playlistShow.height = '50%';
-    self.playlistIndex.focus();
-    self.screen.render();
-  });
 }
 
 var constantKeys = {
@@ -130,8 +78,9 @@ var constantKeys = {
   'Tab': 'focus/unfocus queue',
 };
 
-View.prototype.setKeys = function() {
+View.prototype.setHandlers = function(i) {
   var self = this;
+
   this.screen.key('C-c', function(ch, key) {
     return process.exit(0);
   });
@@ -159,9 +108,69 @@ View.prototype.setKeys = function() {
       .advance(-1)
       .done();
   });
+
+  this.masterListView.on('select', function(data, index) {
+    if (!data) return;
+    self.jukebox
+      .play(data.content, index)
+      .done();
+  });
+  this.masterListView.key('delete, backspace', function() {
+    self.jukebox.unqueue(self.masterListView.selected)
+      .then(function(queue) {
+        if (queue) {
+          self.masterListView.setItems(queue);
+          self.screen.render();
+        }
+      }).done();
+  });
+  instructions(this.masterListView, i, {
+    'Enter': 'skip directly to track',
+    'Del/Backspace': 'remove track from queue',
+  });
+
+  this.playlistIndex.on('select', function(data, index) {
+    var playlist = data.content;
+    self.playlistShow.setLabel(" "+playlist.name+" ");
+    self.playlistShow.setItems(playlist);
+    self.playlistShow.height = '100%';
+    self.playlistShow.focus();
+    self.screen.render();
+  });
+  this.playlistIndex.key('a', function(ch, key) {
+    var i = self.playlistIndex.selected,
+        data = self.playlistIndex.getItem(i),
+        playlist;
+    if (data) {
+      playlist = data.content;
+      if (playlist.autoPull) playlist.autoPull = false;
+      else playlist.autoPull = true;
+    }
+    self.screen.render()
+  });
+  instructions(this.playlistIndex, i, {
+    Enter: 'browse selected playlist',
+    A: 'toggle autoplay (queue will draw from playlist when empty)'
+  });
+
+  this.playlistShow.on('select', function(data, index) {
+    self.jukebox.enqueue(data.content);
+    self.masterListView.addItem(data.content);
+    self.masterListView.setLabel(queueTitle(self.jukebox.pending()));
+    self.screen.render();
+  });
+  this.playlistShow.on('cancel', function(data, index) {
+    self.playlistShow.height = '50%';
+    self.playlistIndex.focus();
+    self.screen.render();
+  });
+  instructions(this.playlistShow, i, {
+    Enter: 'enqueue track',
+    Esc: 'return to playlist selection'
+  });
 }
 
-function makeMasterListView(j, i) {
+function makeMasterListView(j) {
   var tl = TrackList({
     label: ' Queue ',
     width: '50%',
@@ -181,14 +190,10 @@ function makeMasterListView(j, i) {
     },
   });
   selectionStyle(tl, {bg: 'green', fg: 'light white'});
-  instructions(tl, i, {
-    'Enter': 'skip directly to track',
-    'Del/Backspace': 'remove track from queue',
-  });
   return tl
 }
 
-function makePlaylistIndex(j, i) {
+function makePlaylistIndex(j) {
   var tl = TrackList({
     label: ' Playlists ',
     width: '50%',
@@ -213,14 +218,10 @@ function makePlaylistIndex(j, i) {
     },
   });
   selectionStyle(tl, {bg: 'green', fg: 'light white'});
-  instructions(tl, i, {
-    Enter: 'browse selected playlist',
-    A: 'toggle autoplay (queue will draw from playlist when empty)'
-  });
   return tl;
 }
 
-function makePlaylistShow(j, i) {
+function makePlaylistShow(j) {
   var tl = TrackList({
     width: '50%',
     height: '50%',
@@ -245,10 +246,6 @@ function makePlaylistShow(j, i) {
     },
   });
   selectionStyle(tl, {bg: 'green', fg: 'light white'});
-  instructions(tl, i, {
-    Enter: 'enqueue track',
-    Esc: 'return to playlist selection'
-  });
   return tl;
 }
 
