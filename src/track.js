@@ -30,9 +30,12 @@ function Track(options) {
   this._speaker = null;
   this.size = null;
   this._progress = 0;
-  this._stop = function() {
+  this._close = function() {
     this._speaker = null;
     this.emit('end');
+  }.bind(this);
+  this._reset = function() {
+    this._progress = 0;
   }.bind(this);
 }
 
@@ -43,7 +46,8 @@ Track.prototype.play = function() {
       var player = playerFor(self.extension, function(format, pl) {
         // on success (format) callback
         self._speaker = new Speaker(format);
-        self._speaker.once('close', self._stop);
+        self._speaker.once('close', self._close);
+        self._speaker.once('close', self._reset);
         pl.pipe(self._speaker);
         resolve();
       });
@@ -53,19 +57,23 @@ Track.prototype.play = function() {
 }
 
 Track.prototype.pause = function() {
+  return this._stop(false);
+}
+
+Track.prototype.stop = function() {
+  return this._stop(true);
+}
+
+Track.prototype._stop = function(reset) {
   var self = this;
   return Q.Promise(function(resolve, reject) {
     if (self._speaker) {
+      if (!reset) { self._speaker.removeListener('close', self._reset); }
       self._speaker.end(resolve);
     } else {
       resolve();
     }
   });
-}
-
-Track.prototype.stop = function() {
-  this._progress = 0;
-  return this.pause();
 }
 
 Track.prototype.timeRemaining = function() {
