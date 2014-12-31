@@ -16,12 +16,14 @@ From anywhere
 * `shift-right` and `shift-left` skip forward and backward in the queue
 
 From the playlist pane (app starts with it focused)
-* `enter` selects a playlist and expands the track pane.
-* `a` marks a playlist as "autoplay." The jukebox will pull from this list if the queue runs dry.
+* `enter` selects a playlist and expands the track pane
+* `a` marks a playlist as "autoplay." The jukebox will pull from this list if the queue runs dry
+* `e` enqueues all tracks at once, ignoring those already queued up. `shift-e` enqueues everything without checking
 
 From the track pane
 * `enter` enqueues a track
-* `escape` shrinks the pane and returns focus to the playlist pane.
+* `escape` shrinks the pane and returns focus to the playlist pane
+* `e` and `shift-e`, as above
 
 From the queue
 * `enter` skips directly to the selected track and plays it
@@ -42,7 +44,6 @@ A `Jukebox` loads the playlists, maintains the queue of tracks to play, and keep
 # To do
 
 1. The queue needs its own model to move logic out of Jukebox
-3. Ability to enqueue an entire playlist's tracks
 5. Remember progress of current track, so after pausing we can resume from where we left off
 
 # Bites
