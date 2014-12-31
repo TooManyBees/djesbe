@@ -11,15 +11,46 @@ function View(jukebox) {
   var self = this;
 
   this.screen = blessed.screen();
+  var instructions = blessed.Box({
+    width: '100%',
+    height: 2,
+    bottom: 0,
+    left: 0,
+    align: 'left',
+    parseTags: true,
+  });
+  var instructionLines = {
+    specific: blessed.Box({
+      height: 1,
+      top: 0,
+      align: 'left',
+      parseTags: true,
+    }),
+    global: blessed.Box({
+      height: 1,
+      bottom: 0,
+      align: 'right',
+      parseTags: true,
+    }),
+  };
+  instructions.append(instructionLines.specific);
+  instructions.append(instructionLines.global);
+  var interactivePanes = blessed.Box({
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 2
+  });
+
   this.jukebox = jukebox;
 
-  this.masterListView = makeMasterListView(this.jukebox);
-  this.playlistIndex = makePlaylistIndex(this.jukebox);
-  this.playlistShow = makePlaylistShow(this.jukebox);
+  this.masterListView = makeMasterListView(this.jukebox, instructionLines);
+  this.playlistIndex = makePlaylistIndex(this.jukebox, instructionLines);
+  this.playlistShow = makePlaylistShow(this.jukebox, instructionLines);
 
-  this.screen.append(this.masterListView);
-  this.screen.append(this.playlistIndex);
-  this.screen.append(this.playlistShow);
+  interactivePanes.append(this.masterListView);
+  interactivePanes.append(this.playlistIndex);
+  interactivePanes.append(this.playlistShow);
 
   this.playlistIndex.setItems(this.jukebox.playlists);
   this.playlistIndex.focus();
@@ -36,6 +67,8 @@ function View(jukebox) {
 
   this.setHandlers();
   this.setKeys();
+  this.screen.append(interactivePanes);
+  this.screen.append(instructions);
   this.screen.render();
 }
 
@@ -90,6 +123,13 @@ View.prototype.setHandlers = function() {
   });
 }
 
+var constantKeys = {
+  space: 'play/pause',
+  'S-right': 'skip forward',
+  'S-left': 'skip backward',
+  'Tab': 'focus/unfocus queue',
+};
+
 View.prototype.setKeys = function() {
   var self = this;
   this.screen.key('C-c', function(ch, key) {
@@ -121,7 +161,7 @@ View.prototype.setKeys = function() {
   });
 }
 
-function makeMasterListView(j) {
+function makeMasterListView(j, i) {
   var tl = TrackList({
     label: ' Queue ',
     width: '50%',
@@ -141,10 +181,14 @@ function makeMasterListView(j) {
     },
   });
   selectionStyle(tl, {bg: 'green', fg: 'light white'});
+  instructions(tl, i, {
+    'Enter': 'skip directly to track',
+    'Del/Backspace': 'remove track from queue',
+  });
   return tl
 }
 
-function makePlaylistIndex(j) {
+function makePlaylistIndex(j, i) {
   var tl = TrackList({
     label: ' Playlists ',
     width: '50%',
@@ -169,10 +213,14 @@ function makePlaylistIndex(j) {
     },
   });
   selectionStyle(tl, {bg: 'green', fg: 'light white'});
+  instructions(tl, i, {
+    Enter: 'browse selected playlist',
+    A: 'toggle autoplay (queue will draw from playlist when empty)'
+  });
   return tl;
 }
 
-function makePlaylistShow(j) {
+function makePlaylistShow(j, i) {
   var tl = TrackList({
     width: '50%',
     height: '50%',
@@ -197,6 +245,10 @@ function makePlaylistShow(j) {
     },
   });
   selectionStyle(tl, {bg: 'green', fg: 'light white'});
+  instructions(tl, i, {
+    Enter: 'enqueue track',
+    Esc: 'return to playlist selection'
+  });
   return tl;
 }
 
@@ -236,5 +288,20 @@ function selectionStyle(list, opts) {
   list.on('blur', function() {
     list.style.selected.bg = undefined;
     list.style.selected.fg = undefined;
+  });
+}
+
+function instructions(list, lines, keys) {
+  var focusSpecificHelp = [];
+  var globalHelp = [];
+  Object.keys(keys).forEach(function(key) {
+    focusSpecificHelp.push("{light-magenta-fg}"+key+":{/} "+keys[key]);
+  });
+  Object.keys(constantKeys).forEach(function(key) {
+    globalHelp.push("{cyan-fg}"+key+":{/} "+constantKeys[key]);
+  });
+  list.on('focus', function() {
+    lines.specific.setContent(focusSpecificHelp.join(" "));
+    lines.global.setContent(globalHelp.join(" "));
   });
 }
