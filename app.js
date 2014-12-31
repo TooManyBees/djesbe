@@ -13,5 +13,6 @@ j.load(playlistDir)
   })
   .catch(function(err) {
     console.error("Error: "+err);
+    process.exit(1);
   })
   .done();
