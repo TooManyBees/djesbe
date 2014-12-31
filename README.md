@@ -44,6 +44,9 @@ A `Jukebox` loads the playlists, maintains the queue of tracks to play, and keep
 # To do
 
 1. The queue needs its own model to move logic out of Jukebox
+2. AAC support
+3. "undo" levels (maybe just 1)
+4. websocket interface?
 
 # Bites
 
