@@ -145,9 +145,21 @@ View.prototype.setHandlers = function(i) {
       self.screen.render()
     }
   });
+  this.playlistIndex.key('e', function(ch, key) {
+    var playlist = getSelectedPlaylist(self.playlistIndex);
+    if (playlist) {
+      playlist.forEach(function(track) {
+        self.jukebox.enqueue(track);
+        self.masterListView.addItem(track);
+      });
+      self.masterListView.setLabel(queueTitle(self.jukebox.pending()));
+      self.screen.render();
+    }
+  });
   instructions(this.playlistIndex, i, {
     Enter: 'browse selected playlist',
-    A: 'toggle autoplay (queue will draw from playlist when empty)'
+    A: 'toggle autoplay (queue draws from here if empty)',
+    E: 'enqueue all tracks at once',
   });
 
   this.playlistShow.on('select', function(data, index) {
