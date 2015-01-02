@@ -209,11 +209,10 @@ Jukebox.prototype.autoPullPlaylists = function() {
 }
 
 Jukebox.prototype._randomSelect = function() {
-  var pool = [],
-      self = this;
+  var pool = [];
   this.autoPullPlaylists().forEach(function(list) {
-    pool = pool.concat(list.filter(self.isNotEnqueued.bind(self)));
-  });
+    pool = pool.concat(list.filter(this.isNotEnqueued, this));
+  }, this);
   return pool[Math.floor(pool.length * Math.random())];
 }
 

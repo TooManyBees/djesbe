@@ -257,7 +257,9 @@ function makePlaylistIndex(j) {
     },
     keys: true,
     displayFn: function(pl) {
-      var duration = fromSeconds(durationOfTracks(pl));
+      var duration = fromSeconds(pl.reduce(function(acc, track) {
+        return acc + track.duration;
+      }, 0));
       var autoPull = pl.autoPull ? " {light-red-fg}(auto){/}" : ""
       return pl.name + " - " + pl.length + " tracks @ " + duration + autoPull;
     },
@@ -294,12 +296,6 @@ function makePlaylistShow(j) {
   return tl;
 }
 
-function durationOfTracks(tracks) {
-  var duration = 0;
-  tracks.forEach(function(track) {duration += track.timeRemaining()});
-  return duration;
-}
-
 function fromSeconds(seconds) {
   var minutes = Math.floor(seconds / 60);
   var hours = Math.floor(minutes / 60);
@@ -318,7 +314,9 @@ function fromSeconds(seconds) {
 }
 
 function queueTitle(pending) {
-  var duration = fromSeconds(durationOfTracks(pending));
+  var duration = fromSeconds(pending.reduce(function(acc, track) {
+    return acc + track.timeRemaining();
+  }, 0));
   return " Queue - "+duration+" remaining";
 }
 
