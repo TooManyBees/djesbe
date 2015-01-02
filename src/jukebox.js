@@ -87,8 +87,9 @@ Jukebox.prototype.pending = function() {
   return this.queue.slice(this._cursor, this.queue.length);
 }
 
-Jukebox.prototype.enqueue = function(track) {
-  this.queue.push(track);
+Jukebox.prototype.enqueue = function(tracks) {
+  if (!Array.isArray(tracks)) tracks = [tracks];
+  this.queue.push.apply(this.queue, tracks);
 };
 
 Jukebox.prototype.unqueue = function(index) {
@@ -194,7 +195,7 @@ Jukebox.prototype.nextTrack = function(dir) {
     return nextTrack;
   } else if (this.autoPullPlaylists().length && (nextTrack = this._randomSelect())) {
     this._cursor = this.queue.length;
-    this.enqueue(nextTrack);
+    this.enqueue([nextTrack]);
     this.emit('force-pull', nextTrack, this._cursor); // View must detect this and add track to master list
     return nextTrack;
   } else {

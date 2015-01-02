@@ -201,17 +201,17 @@ View.prototype.setHandlers = function(i) {
     self.masterListView.setLabel(queueTitle(self.jukebox.pending()));
   }
 
-  function enqueueTrack(track) {
-    self.jukebox.enqueue(track);
-    self.masterListView.addItem(track);
+  function enqueueTrack(track) { enqueueTracks([track]); }
+
+  function enqueueTracks(tracks) {
+    self.jukebox.enqueue(tracks);
+    tracks.forEach(self.masterListView.addItem, self.masterListView);
   }
 
   function enqueueAllTracks(playlist, includeEnqueued) {
-    playlist.filter(function(track) {
+    enqueueTracks(playlist.filter(function(track) {
       return includeEnqueued || self.jukebox.isNotEnqueued(track);
-    }).forEach(function(track) {
-      enqueueTrack(track);
-    });
+    }));
   }
 }
 
