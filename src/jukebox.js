@@ -92,23 +92,35 @@ Jukebox.prototype.enqueue = function(tracks) {
   this.queue.push.apply(this.queue, tracks);
 };
 
-Jukebox.prototype.unqueue = function(index) {
-  var self = this;
-  function snipSnip() {
-    // Assume that a track can/will be enqueued multiple times.
-    // We can't just indexOf to find it, we have to use the index.
-    if (index <= self._cursor && self._cursor > 0) self._cursor--;
-    // Attempt a splice, but only return the changed queue if
-    // something got spliced out. (i.e. index out of bounds
-    // harmlessly fizzles)
-    if (self.queue.splice(index, 1)[0]) return self.queue;
-  }
+Jukebox.prototype.unqueue = function(index, len) {
+  len = len || 1;
 
-  if (this.queue[index] === this.currentTrack()) {
-    return this.advance(1).then(snipSnip);
-  } else {
-    return Q(snipSnip());
-  }
+  var self = this,
+      // Were we playing a track, and is it going to be removed?
+      // Note it so we know whether or not to stop the track beforehand
+      // and restart the next one afterward.
+      activeTrackRemoved = this._cursor >= index
+                        && this._cursor < (index + len)
+                        && this.currentTrack()
+                        && this.currentTrack().isPlaying();
+
+  var p;
+  if (activeTrackRemoved) p = this.stop(this.currentTrack());
+  else p = Q();
+
+  return p.then(function() {
+    if (self._cursor >= (index + len)) self._cursor -= len;
+    else if (self._cursor >= index) self._cursor = index;
+
+    self.queue.splice(index, len);
+    self._cursor = Math.max(0, self._cursor);
+    self._cursor = Math.min(self._cursor, self.queue.length-1);
+
+    if (activeTrackRemoved && self.currentTrack()) return self.play(self.currentTrack()).then(function() {
+      return self.queue;
+    });
+    else return Q(self.queue);
+  });
 }
 
 /*
