@@ -1,5 +1,6 @@
 var blessed = require('blessed');
 var TrackList = require('./tracklist');
+var undo = require('./undo');
 
 module.exports = makeView;
 
@@ -56,6 +57,11 @@ function View(jukebox) {
   this.playlistIndex.setItems(this.jukebox.playlists);
   this.playlistIndex.focus();
 
+  this.undo = new undo.UndoBuffer();
+  this.undo.registerUnqueue(function(index, len) {
+    this.unqueue(index, len);
+  }, this);
+
   this.screen.append(interactivePanes);
   this.screen.append(instructions);
   this.screen.render();
@@ -98,14 +104,17 @@ View.prototype.setHandlers = function(i) {
       .advance(-1)
       .done();
   });
+  this.screen.key('u', function(ch, key) {
+    self.undo.rewind();
+  });
 
   this.jukebox.on('advance', function(index) {
     self.masterListView.select(index);
-    setQueueLabel();
+    self.setQueueLabel();
     self.screen.render();
   });
   this.jukebox.on('heartbeat', function() {
-    setQueueLabel();
+    self.setQueueLabel();
     self.screen.render();
   });
   this.jukebox.on('force-pull', function(track, index) {
@@ -120,14 +129,7 @@ View.prototype.setHandlers = function(i) {
       .done();
   });
   this.masterListView.key('delete, backspace', function() {
-    self.jukebox.unqueue(self.masterListView.selected)
-      .then(function(queue) {
-        if (queue) {
-          self.masterListView.setItems(queue);
-          setQueueLabel();
-          self.screen.render();
-        }
-      }).done();
+    self.unqueue(self.masterListView.selected, 1);
   });
   instructions(this.masterListView, i, {
     'Enter': 'skip directly to track',
@@ -155,7 +157,7 @@ View.prototype.setHandlers = function(i) {
     if (playlist) {
       // shift-e calls enqueuAllTracks with includeEnqueued=true
       enqueueAllTracks(playlist, key.shift);
-      setQueueLabel();
+      self.setQueueLabel();
       self.screen.render();
     }
   });
@@ -168,7 +170,7 @@ View.prototype.setHandlers = function(i) {
 
   this.playlistShow.on('select', function(data, index) {
     enqueueTrack(data.content);
-    setQueueLabel();
+    self.setQueueLabel();
     self.screen.render();
   });
   this.playlistShow.on('cancel', function(data, index) {
@@ -180,7 +182,7 @@ View.prototype.setHandlers = function(i) {
     // shift-e calls enqueuAllTracks with includeEnqueued=true
     var playlist = self.playlistShow.ritems;
     enqueueAllTracks(playlist, key.shift);
-    setQueueLabel();
+    self.setQueueLabel();
     self.screen.render();
   });
   instructions(this.playlistShow, i, {
@@ -197,13 +199,15 @@ View.prototype.setHandlers = function(i) {
     if (data) return data.content;
   }
 
-  function setQueueLabel() {
-    self.masterListView.setLabel(queueTitle(self.jukebox.pending()));
-  }
-
   function enqueueTrack(track) { enqueueTracks([track]); }
 
-  function enqueueTracks(tracks) {
+  function enqueueTracks(tracks, doNotRecordUndo) {
+    if (!doNotRecordUndo) {
+      self.undo.store(new undo.Unqueue({
+        index: self.jukebox.queue.length,
+        len: tracks.length,
+      }));
+    }
     self.jukebox.enqueue(tracks);
     tracks.forEach(self.masterListView.addItem, self.masterListView);
   }
@@ -213,6 +217,23 @@ View.prototype.setHandlers = function(i) {
       return includeEnqueued || self.jukebox.isNotEnqueued(track);
     }));
   }
+}
+
+View.prototype.unqueue = function(index, length) {
+  var self = this,
+      length = length || 1;
+  this.jukebox.unqueue(index, length)
+    .then(function(queue) {
+      if (queue) {
+        self.masterListView.setItems(queue);
+        self.setQueueLabel();
+        self.screen.render();
+      }
+    }).done();
+}
+
+View.prototype.setQueueLabel = function() {
+  this.masterListView.setLabel(queueTitle(this.jukebox.pending()));
 }
 
 function makeMasterListView(j) {
