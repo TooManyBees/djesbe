@@ -16,6 +16,7 @@ function TrackList(options) {
     return new TrackList(options);
   }
   this.displayFn = options.displayFn || function(id) {return id};
+  this.backingList = [];
   blessed.list.call(this, options);
 };
 

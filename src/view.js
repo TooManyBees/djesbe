@@ -42,15 +42,21 @@ function View(jukebox) {
     bottom: 2
   });
 
+  var selectionPanes = blessed.Box({
+    top: 0,
+    left: 0,
+    width: '50%',
+    height: '100%',
+  });
+
   this.jukebox = jukebox;
 
-  this.masterListView = makeMasterListView(this.jukebox);
-  this.playlistIndex = makePlaylistIndex(this.jukebox);
-  this.playlistShow = makePlaylistShow(this.jukebox);
+  this.masterListView = makeMasterListView(this.jukebox, interactivePanes);
+  this.playlistIndex = makePlaylistIndex(this.jukebox, selectionPanes);
+  this.playlistShow = makePlaylistShow(this.jukebox, selectionPanes);
+  this.trackFilter = makeFilter(selectionPanes);
 
-  interactivePanes.append(this.masterListView);
-  interactivePanes.append(this.playlistIndex);
-  interactivePanes.append(this.playlistShow);
+  interactivePanes.append(selectionPanes);
 
   this.setHandlers(instructionLines);
   this.playlistIndex.setItems(this.jukebox.playlists);
@@ -137,6 +143,7 @@ View.prototype.setHandlers = function(i) {
   this.playlistIndex.on('select', function(data, index) {
     var playlist = data.content;
     self.playlistShow.setLabel(" "+playlist.name+" ");
+    self.playlistShow.backingList = playlist;
     self.playlistShow.setItems(playlist);
     self.playlistShow.height = '100%';
     self.playlistShow.focus();
@@ -172,23 +179,58 @@ View.prototype.setHandlers = function(i) {
     self.screen.render();
   });
   this.playlistShow.on('cancel', function(data, index) {
+    delete self.playlistShow.filter;
     self.playlistShow.height = '50%';
+    resetPlaylistShow();
     self.playlistIndex.focus();
     self.screen.render();
   });
-  this.playlistShow.key('e, S-e', function(ch, key) {
-    // shift-e calls enqueuAllTracks with includeEnqueued=true
-    var playlist = self.playlistShow.ritems;
-    enqueueAllTracks(playlist, key.shift);
-    setQueueLabel();
+  this.playlistShow.key('/', function(ch, key) {
+    var re = /electric six/i,
+        i;
+    self.screen.saveFocus();
+    self.trackFilter.show();
+    self.trackFilter.focus();
     self.screen.render();
-  });
+  })
   instructions(this.playlistShow, i, {
     Enter: 'enqueue track',
     Esc: 'return to playlist selection',
-    E: 'enqueue unplayed tracks',
-    'S-E': 'enqueue ALL tracks',
+    '/': 'filter',
   });
+
+  // this.trackFilter.on('keystroke', debounce(filterPlaylist));
+  // this.trackFilter.on('keystroke', console.log)
+  this.trackFilter.on('submit', function() {
+    filterPlaylist();
+    self.screen.restoreFocus();
+    self.screen.render();
+  });
+
+  this.trackFilter.on('cancel', function() {
+    resetPlaylistShow();
+    self.trackFilter.setValue("");
+    self.trackFilter.hide();
+    self.screen.restoreFocus();
+    self.screen.render();
+  });
+
+  instructions(this.trackFilter, i, {
+    Enter: 'filter by name',
+    Esc: 'clear filter',
+  });
+
+  function resetPlaylistShow() {
+    self.playlistShow.setItems(self.playlistShow.backingList);
+  }
+
+  function filterPlaylist() {
+    var re = new RegExp(self.trackFilter.value, "i");
+    var newItems = self.playlistShow.backingList.filter(function(item) {
+      return item.title.match(re)
+    });
+    self.playlistShow.setItems(newItems);
+  }
 
   function getSelectedPlaylist(list) {
     var i = self.playlistIndex.selected,
@@ -215,8 +257,9 @@ View.prototype.setHandlers = function(i) {
   }
 }
 
-function makeMasterListView(j) {
+function makeMasterListView(j, parent) {
   var tl = TrackList({
+    parent: parent,
     label: ' Queue ',
     width: '50%',
     height: '100%',
@@ -238,10 +281,11 @@ function makeMasterListView(j) {
   return tl
 }
 
-function makePlaylistIndex(j) {
+function makePlaylistIndex(j, parent) {
   var tl = TrackList({
+    parent: parent,
     label: ' Playlists ',
-    width: '50%',
+    // width: '50%',
     height: '50%',
     top: 0,
     left: 0,
@@ -268,9 +312,10 @@ function makePlaylistIndex(j) {
   return tl;
 }
 
-function makePlaylistShow(j) {
+function makePlaylistShow(j, parent) {
   var tl = TrackList({
-    width: '50%',
+    parent: parent,
+    // width: '50%',
     height: '50%',
     bottom: 0,
     left: 0,
@@ -294,6 +339,40 @@ function makePlaylistShow(j) {
   });
   selectionStyle(tl, {bg: 'green', fg: 'light white'});
   return tl;
+}
+
+function makeFilter(parent) {
+  var width = 50;
+  var box = new blessed.Box({
+    parent: parent,
+    height: 1,
+    width: width,
+    bottom: 0,
+    left: 2,
+    hidden: true,
+    align: 'left',
+    parseTags: true,
+    content: '{light-red-fg} FILTER: {/}',
+  });
+
+  var input = new blessed.Textbox({
+    parent: box,
+    height: 1,
+    width: width - 9,
+    bottom: 0,
+    right: 0,
+    align: 'left',
+    inputOnFocus: true,
+  })
+
+  box.on('focus', function() {
+    input.focus();
+  });
+
+  input.on('focus', function() { box.show() });
+  input.on('blur', function() { box.hide() });
+
+  return input;
 }
 
 function fromSeconds(seconds) {
@@ -344,4 +423,17 @@ function instructions(list, lines, keys) {
     lines.specific.setContent(focusSpecificHelp.join(" "));
     lines.global.setContent(globalHelp.join(" "));
   });
+}
+
+function debounce(fn, wait) {
+  var timeout;
+  return function() {
+    var thisArg = this,
+      args = arguments;
+    clearTimeout(timeout);
+    timeout = setTimeout(function() {
+      timeout = null;
+      fn.apply(thisArg, args);
+    }, wait);
+  };
 }
