@@ -12,7 +12,7 @@ j.load(playlistDir)
     View(j);
   })
   .catch(function(err) {
-    console.error("Error: "+err);
+    console.error(err.stack);
     process.exit(1);
   })
   .done();
