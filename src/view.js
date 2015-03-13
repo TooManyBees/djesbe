@@ -202,8 +202,8 @@ View.prototype.setHandlers = function(i) {
   }
 
   function enqueueTrack(track) {
-    self.jukebox.enqueue(track);
-    self.masterListView.addItem(track);
+    var t = self.jukebox.enqueue(track);
+    self.masterListView.addItem(t);
   }
 
   function enqueueAllTracks(playlist, includeEnqueued) {

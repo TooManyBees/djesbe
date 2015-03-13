@@ -76,7 +76,9 @@ Jukebox.prototype.hasPlayed = function(track) {
 }
 
 Jukebox.prototype.isEnqueued = function(track) {
-  return this.queue.indexOf(track) > -1;
+  return this.queue.some(function(t){
+    return track.id === t.id;
+  });
 }
 
 Jukebox.prototype.isNotEnqueued = function(track) {
@@ -88,14 +90,14 @@ Jukebox.prototype.pending = function() {
 }
 
 Jukebox.prototype.enqueue = function(track) {
-  this.queue.push(track);
+  var t = new Track(track);
+  this.queue.push(t);
+  return t;
 };
 
 Jukebox.prototype.unqueue = function(index) {
   var self = this;
   function snipSnip() {
-    // Assume that a track can/will be enqueued multiple times.
-    // We can't just indexOf to find it, we have to use the index.
     if (index <= self._cursor && self._cursor > 0) self._cursor--;
     // Attempt a splice, but only return the changed queue if
     // something got spliced out. (i.e. index out of bounds

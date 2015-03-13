@@ -110,13 +110,13 @@ Track.unique = function(track) {
   if (registry.hasOwnProperty(track.uri)) {
     return registry[track.uri];
   } else {
-    var newTrack = new Track({
+    var newTrack = {
       uri: track.uri,
       title: track.title,
       duration: track.duration,
       extension: track.extension,
       id: uniqueId++
-    });
+    };
     registry[track.uri] = newTrack;
     return newTrack;
   }
