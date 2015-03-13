@@ -113,8 +113,8 @@ Jukebox.prototype.unqueue = function(index, len) {
     else if (self._cursor >= index) self._cursor = index;
 
     self.queue.splice(index, len);
-    self._cursor = Math.max(0, self._cursor);
     self._cursor = Math.min(self._cursor, self.queue.length-1);
+    self._cursor = Math.max(0, self._cursor);
 
     if (activeTrackRemoved && self.currentTrack()) return self.play(self.currentTrack()).then(function() {
       return self.queue;
@@ -189,6 +189,7 @@ Jukebox.prototype.pause = function(track) {
 }
 
 Jukebox.prototype.stop = function(track) {
+  if (!track) return Q();
   track.removeListener('end', this._autoAdvance);
   return track.stop();
 }

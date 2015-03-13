@@ -45,6 +45,9 @@ UndoBuffer.prototype.rewind = function() {
   if (this.buffer.length > 0) this.buffer.pop().execute(this.registry);
 }
 
+// Pass a callback function in (one or more times) and they will be executed upon enqueuing tracks and unqueuing them
+// The most basic unqueuing function is to obviously remove them from the playlist
+
 UndoBuffer.prototype.registerUnqueue = function(cb, thisArg){
   this.registry.unqueue.push(cb.bind(thisArg));
 };
